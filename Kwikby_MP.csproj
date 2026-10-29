@@ -11,6 +11,10 @@
     <!-- Cached locally: the machine has no route to nuget.org, so versions are pinned to
          what exists in ~/.nuget/packages. See docs/ECOMMERCE_PLAN.md. -->
     <!-- SQLite is the development store and the source of the one-time import into SQL Server. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
     <!-- SQL Server is the deployed provider (database "MVStores"). -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
