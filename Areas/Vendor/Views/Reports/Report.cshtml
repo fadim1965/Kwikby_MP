@@ -1,0 +1,146 @@
+@using Microsoft.Extensions.Options
+@model WebDS_Test.Areas.Vendor.Models.VendorReportPageViewModel
+@inject IOptions<StoreSettings> StoreOptions
+@{
+    ViewData["Title"] = Model.Descriptor.Name;
+    var currency = StoreOptions.Value.CurrencySymbol;
+    var currentGroup = Model.Filter.GroupBy ?? "total";
+    var fromValue = Model.Filter.FromStart.ToString("yyyy-MM-dd");
+    var toValue = Model.Filter.ToExclusive.AddDays(-1).ToString("yyyy-MM-dd");
+
+    string Cell(object? value) => value switch
+    {
+        null => "—",
+        "" => "—",
+        decimal d => currency + d.ToString("N2"),
+        DateTime dt => dt.ToString("dd MMM yyyy HH:mm"),
+        int i => i.ToString("N0"),
+        _ => value.ToString() ?? "—"
+    };
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-1">@Model.Descriptor.Name</h1>
+            <p class="text-muted small mb-0">@Model.Descriptor.Description</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" asp-area="Vendor" asp-controller="Reports" asp-action="Index">All reports</a>
+            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+        </div>
+    </div>
+
+    <form method="get"
+          asp-area="Vendor" asp-controller="Reports" asp-action="Report"
+          asp-route-key="@Model.Descriptor.Key"
+          class="border rounded p-3 mb-4">
+        @* The action carries ?key=…, but a GET submission replaces the action's query string with
+           the form data, so the key has to travel as a field as well. *@
+        <input type="hidden" name="key" value="@Model.Descriptor.Key" />
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small mb-1" for="filter-from">From</label>
+                <input class="form-control form-control-sm" type="date" id="filter-from" name="from" value="@fromValue" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-1" for="filter-to">To</label>
+                <input class="form-control form-control-sm" type="date" id="filter-to" name="to" value="@toValue" />
+            </div>
+            @if (Model.Descriptor.GroupBy.Count > 0)
+            {
+                <div class="col-auto">
+                    <label class="form-label small mb-1" for="filter-group">Group by</label>
+                    <select class="form-select form-select-sm" id="filter-group" name="groupBy">
+                        @foreach (var option in Model.Descriptor.GroupBy)
+                        {
+                            <option value="@option.Value" selected="@(currentGroup == option.Value)">@option.Label</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-auto d-flex gap-2">
+                <button class="btn btn-primary btn-sm" type="submit">Apply filters</button>
+                <button class="btn btn-outline-secondary btn-sm" type="submit" name="format" value="pdf">Download PDF</button>
+            </div>
+        </div>
+        <div class="form-text mt-2">
+            Period shown: <strong>@Model.Document.Period</strong> · Scope: <strong>@Model.Document.Scope</strong>
+            · Dates are inclusive and counted in UTC.
+        </div>
+    </form>
+
+    @if (Model.Document.Figures.Count > 0)
+    {
+        <div class="row g-2 mb-4">
+            @foreach (var figure in Model.Document.Figures)
+            {
+                <div class="col-6 col-md">
+                    <div class="border rounded p-2 h-100">
+                        <div class="text-muted text-uppercase" style="font-size: .65rem;">@figure.Label</div>
+                        <div class="fw-semibold">@figure.Value</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @foreach (var block in Model.Document.Sections)
+    {
+        <div class="mb-4">
+            <h2 class="h6 mb-2">@block.Title</h2>
+            @if (block.Rows.Count == 0)
+            {
+                <p class="text-muted small mb-0">No rows for this period.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                @for (var i = 0; i < block.Headers.Count; i++)
+                                {
+                                    <th class="@(block.RightAligned[i] ? "text-end" : "")">@block.Headers[i]</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in block.Rows)
+                            {
+                                <tr>
+                                    @for (var i = 0; i < block.Headers.Count; i++)
+                                    {
+                                        <td class="@(block.RightAligned[i] ? "text-end" : "")">@Cell(i < row.Length ? row[i] : null)</td>
+                                    }
+                                </tr>
+                            }
+                            @if (block.Totals is not null)
+                            {
+                                <tr class="fw-semibold border-top">
+                                    @for (var i = 0; i < block.Headers.Count; i++)
+                                    {
+                                        <td class="@(block.RightAligned[i] ? "text-end" : "")">@Cell(i < block.Totals.Length ? block.Totals[i] : null)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.Document.Notes.Count > 0)
+    {
+        <div class="border-top pt-3">
+            <h2 class="h6 mb-2">Notes</h2>
+            <ul class="small text-muted mb-0">
+                @foreach (var note in Model.Document.Notes)
+                {
+                    <li>@note</li>
+                }
+            </ul>
+        </div>
+    }
+</div>

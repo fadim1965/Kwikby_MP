@@ -1,0 +1,181 @@
+/* ==========================================================================
+   skin-bazaar.css: the "Bazaar" storefront skin.
+
+   Everything here is scoped to html[data-shop-theme="bazaar"], so no other
+   theme or page is affected. Colours and radii come from the --brand-*
+   variables that ShopTheme writes onto <html>; nothing is hard-coded except
+   the promo strip's contrast pairing.
+   ========================================================================== */
+
+/* ---------- Promo strip ---------------------------------------------------- */
+
+html[data-shop-theme="bazaar"] .bazaar-promo {
+    background: var(--brand-primary-dark);
+    color: #fff;
+    font-size: .9rem;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-promo-dot {
+    opacity: .6;
+}
+
+/* ---------- Section scaffolding -------------------------------------------- */
+
+html[data-shop-theme="bazaar"] .bazaar-section {
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius);
+    padding: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brand-ink);
+    margin: 0 0 .9rem;
+}
+
+/* ---------- Category rail: circular tiles ----------------------------------- */
+
+html[data-shop-theme="bazaar"] .bazaar-rail {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    list-style: none;
+    margin: 0;
+    padding: .25rem .1rem .75rem;
+    scroll-snap-type: x proximity;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-rail > li {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-circle-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 88px;
+    text-decoration: none;
+    color: var(--brand-ink);
+}
+
+html[data-shop-theme="bazaar"] .bazaar-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--brand-primary-tint);
+    color: var(--brand-primary-dark);
+    font-size: 1.4rem;
+    font-weight: 700;
+    border: 2px solid transparent;
+    transition: border-color .15s ease, transform .15s ease;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-circle-label {
+    margin-top: .45rem;
+    font-size: .82rem;
+    text-align: center;
+    line-height: 1.2;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-circle-link:hover .bazaar-circle,
+html[data-shop-theme="bazaar"] .bazaar-circle-link:focus-visible .bazaar-circle {
+    border-color: var(--brand-accent);
+    transform: translateY(-2px);
+}
+
+html[data-shop-theme="bazaar"] .bazaar-circle-link:hover .bazaar-circle-label {
+    color: var(--brand-primary);
+}
+
+/* ---------- Deal row --------------------------------------------------------- */
+
+html[data-shop-theme="bazaar"] .bazaar-deal-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: .9rem;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-deal .card {
+    border-color: var(--brand-border);
+    box-shadow: var(--brand-shadow);
+}
+
+html[data-shop-theme="bazaar"] .bazaar-deal .badge.text-bg-danger {
+    background: var(--brand-accent) !important;
+    color: #fff;
+}
+
+/* ---------- Brand pills ------------------------------------------------------ */
+
+html[data-shop-theme="bazaar"] .bazaar-brands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-brand {
+    display: inline-block;
+    padding: .4rem .9rem;
+    border: 1px solid var(--brand-border-strong);
+    border-radius: 999px;
+    color: var(--brand-ink-muted);
+    text-decoration: none;
+    font-size: .88rem;
+    background: var(--brand-surface-muted);
+}
+
+html[data-shop-theme="bazaar"] .bazaar-brand:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: var(--brand-surface);
+}
+
+/* ---------- Trust row -------------------------------------------------------- */
+
+html[data-shop-theme="bazaar"] .bazaar-trust {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+html[data-shop-theme="bazaar"] .bazaar-trust-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: 1rem;
+    background: var(--brand-surface-muted);
+    border-radius: var(--brand-radius);
+    border-left: 3px solid var(--brand-accent);
+}
+
+html[data-shop-theme="bazaar"] .bazaar-trust-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--brand-primary);
+}
+
+/* ---------- Motion and accessibility ---------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-shop-theme="bazaar"] .bazaar-circle {
+        transition: none;
+    }
+}
+
+@media (max-width: 576px) {
+    html[data-shop-theme="bazaar"] .bazaar-section {
+        padding: 1rem;
+    }
+
+    html[data-shop-theme="bazaar"] .bazaar-deal-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

@@ -1,0 +1,4076 @@
+From e3800b66c4d707a7feaa9a73888d9ccf1d88ce9e Mon Sep 17 00:00:00 2001
+From: Kwikby Dev <dev@kwikby.local>
+Date: Thu, 29 Oct 2026 07:11:02 +0000
+Subject: [PATCH] Apply Kwikby design (v5) to layout and home; add database
+ procedures, hero engine and schema generator
+
+---
+ Database/01_GenerateSchema.ps1   |   28 +
+ Database/02_StoredProcedures.sql |  250 ++++
+ Database/03_HeroEngine.sql       |  438 +++++++
+ Database/README.md               |   29 +
+ Views/Home/Index.cshtml          |  378 +++++-
+ Views/Shared/_Layout.cshtml      |  169 ++-
+ wwwroot/css/kwikby.css           | 2068 ++++++++++++++++++++++++++++++
+ wwwroot/js/kwikby.js             |  631 +++++++++
+ 8 files changed, 3946 insertions(+), 45 deletions(-)
+ create mode 100644 Database/01_GenerateSchema.ps1
+ create mode 100644 Database/02_StoredProcedures.sql
+ create mode 100644 Database/03_HeroEngine.sql
+ create mode 100644 Database/README.md
+ create mode 100644 wwwroot/css/kwikby.css
+ create mode 100644 wwwroot/js/kwikby.js
+
+diff --git a/Database/01_GenerateSchema.ps1 b/Database/01_GenerateSchema.ps1
+new file mode 100644
+index 0000000..69d7bed
+--- /dev/null
++++ b/Database/01_GenerateSchema.ps1
+@@ -0,0 +1,28 @@
++<#
++  Generates Database/00_Schema.sql from the EF Core model.
++
++  The marketplace schema is defined by the entity classes and the DbContext
++  (Domain/*.cs and Data/ApplicationDbContext.cs). Running EF Core's script
++  generator produces the exact SQL Server DDL for every table, key, index and
++  foreign key, which is more reliable than writing it by hand.
++
++  Prerequisites: .NET 9 SDK. Run from the repository root, after the
++  marketplace code (Domain, Data, Services) is in this repository.
++#>
++param(
++    [string]$ContextName = "ApplicationDbContext",
++    [string]$Output = "Database/00_Schema.sql"
++)
++
++$ErrorActionPreference = "Stop"
++
++dotnet tool update --global dotnet-ef --version 9.*
++dotnet add package Microsoft.EntityFrameworkCore.Design --version 9.*
++
++# A migration named InitialSchema captures the whole current model.
++dotnet ef migrations add InitialSchema --context $ContextName --output-dir Data/Migrations
++
++# Idempotent: safe to run on a new database or on one that is already partly built.
++dotnet ef migrations script --idempotent --context $ContextName --output $Output
++
++Write-Host "Schema written to $Output"
+diff --git a/Database/02_StoredProcedures.sql b/Database/02_StoredProcedures.sql
+new file mode 100644
+index 0000000..5ba7cd6
+--- /dev/null
++++ b/Database/02_StoredProcedures.sql
+@@ -0,0 +1,250 @@
++/* =====================================================================
++   Kwikby: stored procedures (SQL Server 2016 SP1 or later)
++   File:       Database/02_StoredProcedures.sql
++   Depends on: the EF-generated schema (01_Schema.sql, see Database/README.md)
++
++   Scope: read paths (search, product detail, dashboards) and atomic stock
++   adjustments. Order placement, payment and ledger logic stays in the
++   C# services, which are unit-tested; duplicating it in T-SQL would let the
++   two drift apart.
++
++   Enum values used here (from Domain/Enums.cs):
++     ListingStatus: Published = 0, Draft = 1, PendingReview = 2, Rejected = 3
++     ReviewStatus:  Pending = 0, Published = 1
++     OrderStatus:   Pending = 0, Paid = 1, Shipped = 2, Delivered = 3,
++                    Cancelled = 4, Refunded = 5
++     ShopStatus:    PendingApproval = 0, Approved = 1, Rejected = 2,
++                    Suspended = 3, Closed = 4
++     StockMovementReason: InitialStock = 0, Restock = 1, Sale = 2,
++                    Return = 3, Adjustment = 4, Cancellation = 5
++   ===================================================================== */
++SET NOCOUNT ON;
++GO
++
++/* ---------- Search and browse: one page of product cards -------------- */
++CREATE OR ALTER PROCEDURE dbo.usp_SearchProducts
++    @Query       NVARCHAR(200) = NULL,
++    @CategoryId  INT           = NULL,
++    @ShopId      INT           = NULL,
++    @MinPrice    DECIMAL(18,2) = NULL,
++    @MaxPrice    DECIMAL(18,2) = NULL,
++    @InStockOnly BIT           = 0,
++    @SortBy      VARCHAR(20)   = 'relevance',   -- relevance | price_asc | price_desc | rating | newest
++    @Page        INT           = 1,
++    @PageSize    INT           = 24
++AS
++BEGIN
++    SET NOCOUNT ON;
++
++    IF @Page < 1 SET @Page = 1;
++    IF @PageSize IS NULL OR @PageSize NOT BETWEEN 1 AND 100 SET @PageSize = 24;
++
++    ;WITH Base AS (
++        SELECT
++            p.Id          AS ProductId,
++            p.Name,
++            p.Slug,
++            p.Brand,
++            p.IsFeatured,
++            p.CreatedUtc,
++            p.CategoryId,
++            p.ShopId,
++            s.Name        AS ShopName,
++            s.Slug        AS ShopSlug,
++            pr.MinPrice,
++            st.TotalStock,
++            rv.AvgRating,
++            rv.ReviewCount
++        FROM dbo.Products AS p
++        INNER JOIN dbo.Shops AS s ON s.Id = p.ShopId AND s.Status = 1
++        CROSS APPLY (
++            SELECT MIN(v.Price) AS MinPrice
++            FROM dbo.ProductVariants AS v
++            WHERE v.ProductId = p.Id AND v.IsActive = 1
++        ) AS pr
++        CROSS APPLY (
++            SELECT ISNULL(SUM(v.StockQuantity), 0) AS TotalStock
++            FROM dbo.ProductVariants AS v
++            WHERE v.ProductId = p.Id AND v.IsActive = 1
++        ) AS st
++        CROSS APPLY (
++            SELECT CAST(AVG(CAST(r.Rating AS DECIMAL(5,2))) AS DECIMAL(5,2)) AS AvgRating,
++                   COUNT(*) AS ReviewCount
++            FROM dbo.Reviews AS r
++            WHERE r.ProductId = p.Id AND r.Status = 1
++        ) AS rv
++        WHERE p.IsDeleted = 0
++          AND p.IsPublished = 1
++          AND p.ModerationStatus = 0                     -- Published
++          AND pr.MinPrice IS NOT NULL                    -- at least one active variant
++          AND (@CategoryId IS NULL OR p.CategoryId = @CategoryId)
++          AND (@ShopId     IS NULL OR p.ShopId     = @ShopId)
++          AND (@MinPrice   IS NULL OR pr.MinPrice >= @MinPrice)
++          AND (@MaxPrice   IS NULL OR pr.MinPrice <= @MaxPrice)
++          AND (@InStockOnly = 0 OR st.TotalStock > 0)
++          AND (@Query IS NULL
++               OR p.Name  LIKE N'%' + @Query + N'%'
++               OR p.Brand LIKE N'%' + @Query + N'%'
++               OR p.ShortDescription LIKE N'%' + @Query + N'%')
++    )
++    SELECT
++        COUNT(*) OVER () AS TotalCount,
++        ProductId, Name, Slug, Brand, IsFeatured, CategoryId,
++        ShopId, ShopName, ShopSlug, MinPrice, TotalStock, AvgRating, ReviewCount
++    FROM Base
++    ORDER BY
++        CASE WHEN @SortBy = 'price_asc'  THEN MinPrice   END ASC,
++        CASE WHEN @SortBy = 'price_desc' THEN MinPrice   END DESC,
++        CASE WHEN @SortBy = 'rating'     THEN AvgRating  END DESC,
++        CASE WHEN @SortBy = 'newest'     THEN CreatedUtc END DESC,
++        IsFeatured DESC,
++        ProductId
++    OFFSET (@Page - 1) * @PageSize ROWS
++    FETCH NEXT @PageSize ROWS ONLY;
++END;
++GO
++
++/* ---------- Product page: product, variants, images, rating ----------- */
++CREATE OR ALTER PROCEDURE dbo.usp_GetProductDetail
++    @ProductId INT
++AS
++BEGIN
++    SET NOCOUNT ON;
++
++    -- Result set 1: the product and its shop
++    SELECT p.Id AS ProductId, p.Name, p.Slug, p.Brand, p.ShortDescription, p.Description,
++           p.CategoryId, p.ShopId, s.Name AS ShopName, s.Slug AS ShopSlug
++    FROM dbo.Products AS p
++    INNER JOIN dbo.Shops AS s ON s.Id = p.ShopId AND s.Status = 1
++    WHERE p.Id = @ProductId AND p.IsDeleted = 0 AND p.IsPublished = 1 AND p.ModerationStatus = 0;
++
++    -- Result set 2: active variants
++    SELECT v.Id AS ProductVariantId, v.Sku, v.Name, v.Price, v.CompareAtPrice,
++           v.StockQuantity, v.LowStockThreshold
++    FROM dbo.ProductVariants AS v
++    INNER JOIN dbo.Products AS p ON p.Id = v.ProductId
++    WHERE v.ProductId = @ProductId AND v.IsActive = 1 AND p.ModerationStatus = 0
++    ORDER BY v.Price, v.Id;
++
++    -- Result set 3: images in display order
++    SELECT i.Id AS ProductImageId, i.Url, i.AltText, i.DisplayOrder, i.IsPrimary
++    FROM dbo.ProductImages AS i
++    WHERE i.ProductId = @ProductId
++    ORDER BY i.IsPrimary DESC, i.DisplayOrder, i.Id;
++
++    -- Result set 4: published reviews summary
++    SELECT COUNT(*) AS ReviewCount,
++           CAST(AVG(CAST(r.Rating AS DECIMAL(5,2))) AS DECIMAL(5,2)) AS AvgRating
++    FROM dbo.Reviews AS r
++    WHERE r.ProductId = @ProductId AND r.Status = 1;
++END;
++GO
++
++/* ---------- Shop dashboard for the vendor workspace ------------------- */
++CREATE OR ALTER PROCEDURE dbo.usp_GetShopDashboard
++    @ShopId INT,
++    @Days   INT = 30
++AS
++BEGIN
++    SET NOCOUNT ON;
++    DECLARE @Since DATETIME2 = DATEADD(DAY, -@Days, SYSUTCDATETIME());
++
++    -- Result set 1: headline figures
++    SELECT
++        (SELECT COUNT(*) FROM dbo.Orders AS o
++          WHERE o.ShopId = @ShopId AND o.PlacedUtc >= @Since)                                   AS OrdersPlaced,
++        (SELECT COUNT(*) FROM dbo.Orders AS o
++          WHERE o.ShopId = @ShopId AND o.PlacedUtc >= @Since AND o.Status IN (1,2,3))           AS OrdersPaidOrLater,
++        (SELECT COUNT(*) FROM dbo.Orders AS o
++          WHERE o.ShopId = @ShopId AND o.PlacedUtc >= @Since AND o.Status = 4)                  AS OrdersCancelled,
++        (SELECT ISNULL(SUM(o.GrandTotal), 0) FROM dbo.Orders AS o
++          WHERE o.ShopId = @ShopId AND o.PlacedUtc >= @Since AND o.Status IN (1,2,3))           AS Revenue,
++        (SELECT COUNT(*) FROM dbo.ProductVariants AS v
++            INNER JOIN dbo.Products AS p ON p.Id = v.ProductId
++          WHERE p.ShopId = @ShopId AND v.IsActive = 1 AND v.StockQuantity <= v.LowStockThreshold) AS LowStockVariants,
++        (SELECT COUNT(*) FROM dbo.Products AS p
++          WHERE p.ShopId = @ShopId AND p.IsDeleted = 0 AND p.ModerationStatus = 2)              AS ListingsAwaitingReview;
++
++    -- Result set 2: top products by units sold (paid or later)
++    SELECT TOP (5)
++        ol.ProductName,
++        SUM(ol.Quantity)  AS UnitsSold,
++        SUM(ol.LineTotal) AS Sales
++    FROM dbo.OrderLines AS ol
++    INNER JOIN dbo.Orders AS o ON o.Id = ol.OrderId
++    WHERE o.ShopId = @ShopId AND o.PlacedUtc >= @Since AND o.Status IN (1,2,3)
++    GROUP BY ol.ProductName
++    ORDER BY SUM(ol.Quantity) DESC, ol.ProductName;
++END;
++GO
++
++/* ---------- Platform dashboard for administrators --------------------- */
++CREATE OR ALTER PROCEDURE dbo.usp_GetPlatformDashboard
++    @Days INT = 30
++AS
++BEGIN
++    SET NOCOUNT ON;
++    DECLARE @Since DATETIME2 = DATEADD(DAY, -@Days, SYSUTCDATETIME());
++
++    SELECT
++        (SELECT ISNULL(SUM(o.GrandTotal), 0) FROM dbo.Orders AS o
++          WHERE o.PlacedUtc >= @Since AND o.Status IN (1,2,3))                       AS Gmv,
++        (SELECT COUNT(*) FROM dbo.Orders AS o WHERE o.PlacedUtc >= @Since)           AS OrdersPlaced,
++        (SELECT COUNT(*) FROM dbo.Shops AS s WHERE s.Status = 1)                     AS ActiveShops,
++        (SELECT COUNT(*) FROM dbo.Shops AS s WHERE s.Status = 0)                     AS ShopsAwaitingApproval,
++        (SELECT COUNT(*) FROM dbo.Products AS p
++          WHERE p.IsDeleted = 0 AND p.ModerationStatus = 2)                          AS ListingsAwaitingReview,
++        (SELECT COUNT(*) FROM dbo.Reviews AS r WHERE r.Status = 0)                   AS ReviewsAwaitingModeration;
++END;
++GO
++
++/* ---------- Atomic stock adjustment with an audit trail --------------- */
++CREATE OR ALTER PROCEDURE dbo.usp_AdjustStock
++    @ProductVariantId INT,
++    @QuantityDelta    INT,
++    @Reason           INT,                 -- StockMovementReason
++    @Note             NVARCHAR(500) = NULL,
++    @OrderId          INT = NULL,
++    @CreatedBy        NVARCHAR(256) = NULL
++AS
++BEGIN
++    SET NOCOUNT ON;
++    SET XACT_ABORT ON;
++
++    IF @QuantityDelta = 0
++        THROW 52001, N'The quantity change must not be zero.', 1;
++    IF @Reason NOT BETWEEN 0 AND 5
++        THROW 52002, N'Unknown stock movement reason.', 1;
++
++    BEGIN TRY
++        BEGIN TRANSACTION;
++
++        DECLARE @Current INT;
++        SELECT @Current = v.StockQuantity
++        FROM dbo.ProductVariants AS v WITH (UPDLOCK, ROWLOCK)
++        WHERE v.Id = @ProductVariantId;
++
++        IF @Current IS NULL
++            THROW 52003, N'Product variant not found.', 1;
++        IF @Current + @QuantityDelta < 0
++            THROW 52004, N'Not enough stock for this change.', 1;
++
++        UPDATE dbo.ProductVariants
++        SET StockQuantity = @Current + @QuantityDelta
++        WHERE Id = @ProductVariantId;
++
++        INSERT INTO dbo.StockMovements
++            (ProductVariantId, QuantityDelta, StockAfter, Reason, Note, OrderId, CreatedBy, CreatedUtc)
++        VALUES
++            (@ProductVariantId, @QuantityDelta, @Current + @QuantityDelta, @Reason, @Note, @OrderId,
++             @CreatedBy, SYSUTCDATETIME());
++
++        COMMIT TRANSACTION;
++        SELECT @Current + @QuantityDelta AS StockAfter;
++    END TRY
++    BEGIN CATCH
++        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
++        THROW;
++    END CATCH
++END;
++GO
+diff --git a/Database/03_HeroEngine.sql b/Database/03_HeroEngine.sql
+new file mode 100644
+index 0000000..5cccd78
+--- /dev/null
++++ b/Database/03_HeroEngine.sql
+@@ -0,0 +1,438 @@
++/* =====================================================================
++   Kwikby: hero banner engine for SQL Server
++   File:      Kwikby_HeroEngine.sql
++   Requires:  SQL Server 2016 SP1 or later (CREATE OR ALTER).
++   Depends on: dbo.Shops (Id int, Status int, CreatedUtc datetime2)
++               dbo.Categories (Id int)
++               Shop status 1 = Approved (see Domain/Shop.cs).
++   Run in SSMS against the KwikbyMP database. Safe to re-run.
++
++   Contents
++     Tables:      PlatformSettings, VendorBanners, HeroSlots,
++                  CampaignBookings, HeroImpressionStaging
++     Indexes:     filtered and covering indexes for the hot paths
++     View:        vw_EarnedShopCandidates (performance score is a placeholder)
++     Procedures:  usp_CreateCampaignBooking, usp_ReviewCampaignBooking,
++                  usp_GetHeroSlots, usp_RecordHeroImpression,
++                  usp_FlushHeroImpressions
++
++   Billing terms
++     DailyRate: Price = total fee for the StartAt..EndAt window.
++     CPM:       Price = fee per 1,000 impressions; ImpressionCap is required.
++     Platform:  Kwikby's own banner, no shop, no fee.
++   ===================================================================== */
++SET NOCOUNT ON;
++GO
++
++/* ---------- 1. Platform settings (exactly one row) -------------------- */
++IF OBJECT_ID(N'dbo.PlatformSettings', N'U') IS NULL
++CREATE TABLE dbo.PlatformSettings (
++    SettingID             TINYINT      NOT NULL CONSTRAINT PK_PlatformSettings PRIMARY KEY,
++    SponsoredBillingModel VARCHAR(10)  NOT NULL CONSTRAINT DF_PlatformSettings_Model DEFAULT 'DailyRate',
++    UpdatedUtc            DATETIME2(0) NOT NULL CONSTRAINT DF_PlatformSettings_Updated DEFAULT SYSUTCDATETIME(),
++    CONSTRAINT CK_PlatformSettings_Singleton CHECK (SettingID = 1),
++    CONSTRAINT CK_PlatformSettings_Model CHECK (SponsoredBillingModel IN ('DailyRate', 'CPM'))
++);
++GO
++
++IF NOT EXISTS (SELECT 1 FROM dbo.PlatformSettings WHERE SettingID = 1)
++    INSERT INTO dbo.PlatformSettings (SettingID, SponsoredBillingModel) VALUES (1, 'DailyRate');
++GO
++
++/* ---------- 2. Banner creatives ---------------------------------------- */
++IF OBJECT_ID(N'dbo.VendorBanners', N'U') IS NULL
++CREATE TABLE dbo.VendorBanners (
++    BannerID        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_VendorBanners PRIMARY KEY,
++    ShopID          INT NULL CONSTRAINT FK_VendorBanners_Shops REFERENCES dbo.Shops (Id),  -- NULL = Kwikby banner
++    BannerName      NVARCHAR(100) NOT NULL,
++    DesktopImageUrl VARCHAR(512)  NOT NULL,
++    MobileImageUrl  VARCHAR(512)  NOT NULL,
++    TargetUrl       VARCHAR(512)  NOT NULL,
++    CategoryID      INT NULL CONSTRAINT FK_VendorBanners_Categories REFERENCES dbo.Categories (Id), -- NULL = homepage-eligible
++    IsPerkSlot      BIT NOT NULL CONSTRAINT DF_VendorBanners_Perk DEFAULT 0,      -- 1 = earned (free) placement
++    IsApproved      BIT NOT NULL CONSTRAINT DF_VendorBanners_Approved DEFAULT 0,  -- set only by moderation
++    CreatedUtc      DATETIME2(0) NOT NULL CONSTRAINT DF_VendorBanners_Created DEFAULT SYSUTCDATETIME(),
++    CONSTRAINT CK_VendorBanners_Desktop CHECK (DesktopImageUrl LIKE 'https://%'),
++    CONSTRAINT CK_VendorBanners_Mobile  CHECK (MobileImageUrl  LIKE 'https://%'),
++    CONSTRAINT CK_VendorBanners_Target  CHECK (TargetUrl LIKE 'https://%' OR TargetUrl LIKE '/%')
++);
++GO
++
++/* ---------- 3. Slot layout, per page (data, not code) ------------------ */
++IF OBJECT_ID(N'dbo.HeroSlots', N'U') IS NULL
++CREATE TABLE dbo.HeroSlots (
++    SlotID        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_HeroSlots PRIMARY KEY,
++    PageScope     VARCHAR(10) NOT NULL,
++    CategoryID    INT NULL CONSTRAINT FK_HeroSlots_Categories REFERENCES dbo.Categories (Id), -- NULL on Home
++    Position      TINYINT NOT NULL,
++    SlotType      VARCHAR(10) NOT NULL,
++    PreferNewShop BIT NOT NULL CONSTRAINT DF_HeroSlots_PreferNew DEFAULT 0,  -- reserves a slot for shops under 90 days
++    CONSTRAINT CK_HeroSlots_Scope CHECK (PageScope IN ('Home', 'Category')),
++    CONSTRAINT CK_HeroSlots_Pos   CHECK (Position BETWEEN 1 AND 4),
++    CONSTRAINT CK_HeroSlots_Type  CHECK (SlotType IN ('Platform', 'Sponsored', 'Earned')),
++    CONSTRAINT CK_HeroSlots_Scope_Category CHECK ((PageScope = 'Home') = (CategoryID IS NULL)),
++    CONSTRAINT UQ_HeroSlots UNIQUE (PageScope, CategoryID, Position)
++);
++GO
++
++IF NOT EXISTS (SELECT 1 FROM dbo.HeroSlots WHERE PageScope = 'Home')
++BEGIN
++    INSERT INTO dbo.HeroSlots (PageScope, CategoryID, Position, SlotType, PreferNewShop) VALUES
++        ('Home', NULL, 1, 'Platform',  0),
++        ('Home', NULL, 2, 'Sponsored', 0),
++        ('Home', NULL, 3, 'Earned',    1),
++        ('Home', NULL, 4, 'Earned',    0);
++END
++GO
++
++/* ---------- 4. Bookings: what was sold, at what price, and its status -- */
++IF OBJECT_ID(N'dbo.CampaignBookings', N'U') IS NULL
++CREATE TABLE dbo.CampaignBookings (
++    BookingID         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CampaignBookings PRIMARY KEY,
++    BannerID          INT NOT NULL CONSTRAINT FK_CampaignBookings_Banners REFERENCES dbo.VendorBanners (BannerID),
++    ShopID            INT NULL CONSTRAINT FK_CampaignBookings_Shops REFERENCES dbo.Shops (Id),
++    CategoryID        INT NULL CONSTRAINT FK_CampaignBookings_Categories REFERENCES dbo.Categories (Id),
++    BillingModel      VARCHAR(10)   NOT NULL,
++    Price             DECIMAL(12,2) NOT NULL CONSTRAINT DF_CampaignBookings_Price DEFAULT 0,
++    RankValue         DECIMAL(12,4) NOT NULL CONSTRAINT DF_CampaignBookings_Rank DEFAULT 0, -- per-day value or per-1,000 value, for ranking
++    ImpressionCap     INT NULL,
++    ImpressionsServed INT NOT NULL CONSTRAINT DF_CampaignBookings_Served DEFAULT 0,
++    StartAt           DATETIME2(0) NOT NULL,
++    EndAt             DATETIME2(0) NOT NULL,
++    Status            VARCHAR(12)  NOT NULL CONSTRAINT DF_CampaignBookings_Status DEFAULT 'Pending',
++    PaymentRef        NVARCHAR(100) NULL,
++    CreatedUtc        DATETIME2(0) NOT NULL CONSTRAINT DF_CampaignBookings_Created DEFAULT SYSUTCDATETIME(),
++    ReviewedBy        NVARCHAR(256) NULL,
++    ReviewedUtc       DATETIME2(0) NULL,
++    CONSTRAINT CK_CampaignBookings_Model  CHECK (BillingModel IN ('DailyRate', 'CPM', 'Platform')),
++    CONSTRAINT CK_CampaignBookings_Status CHECK (Status IN ('Pending', 'Approved', 'Rejected', 'Cancelled', 'Ended')),
++    CONSTRAINT CK_CampaignBookings_Dates  CHECK (EndAt > StartAt),
++    CONSTRAINT CK_CampaignBookings_Cap    CHECK (BillingModel <> 'CPM' OR (ImpressionCap IS NOT NULL AND ImpressionCap > 0)),
++    CONSTRAINT CK_CampaignBookings_Shop   CHECK ((BillingModel = 'Platform') = (ShopID IS NULL)),
++    CONSTRAINT CK_CampaignBookings_Money  CHECK (Price >= 0 AND ImpressionsServed >= 0)
++);
++GO
++
++/* ---------- 5. Impression staging: written per view, flushed in batches -- */
++IF OBJECT_ID(N'dbo.HeroImpressionStaging', N'U') IS NULL
++CREATE TABLE dbo.HeroImpressionStaging (
++    ImpressionID BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_HeroImpressionStaging PRIMARY KEY,
++    BookingID    INT NOT NULL CONSTRAINT FK_HeroImpressionStaging_Bookings REFERENCES dbo.CampaignBookings (BookingID),
++    ViewedUtc    DATETIME2(3) NOT NULL CONSTRAINT DF_HeroImpressionStaging_Viewed DEFAULT SYSUTCDATETIME()
++);
++GO
++
++/* ---------- 6. Indexes for the hot paths ------------------------------- */
++IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CampaignBookings_Live' AND object_id = OBJECT_ID(N'dbo.CampaignBookings'))
++    CREATE NONCLUSTERED INDEX IX_CampaignBookings_Live
++        ON dbo.CampaignBookings (CategoryID, StartAt, EndAt)
++        INCLUDE (BannerID, ShopID, BillingModel, RankValue, Price, ImpressionCap, ImpressionsServed)
++        WHERE Status = 'Approved';
++GO
++
++IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CampaignBookings_Shop' AND object_id = OBJECT_ID(N'dbo.CampaignBookings'))
++    CREATE NONCLUSTERED INDEX IX_CampaignBookings_Shop
++        ON dbo.CampaignBookings (ShopID, Status, StartAt, EndAt);
++GO
++
++IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_VendorBanners_Category' AND object_id = OBJECT_ID(N'dbo.VendorBanners'))
++    CREATE NONCLUSTERED INDEX IX_VendorBanners_Category
++        ON dbo.VendorBanners (CategoryID, IsPerkSlot, IsApproved)
++        INCLUDE (ShopID, DesktopImageUrl, MobileImageUrl, TargetUrl);
++GO
++
++IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_HeroImpressionStaging_Viewed' AND object_id = OBJECT_ID(N'dbo.HeroImpressionStaging'))
++    CREATE NONCLUSTERED INDEX IX_HeroImpressionStaging_Viewed
++        ON dbo.HeroImpressionStaging (ViewedUtc)
++        INCLUDE (BookingID);
++GO
++
++/* ---------- 7. Earned-shop candidates ---------------------------------- */
++/* PerformanceScore is a placeholder (0). Replace it with a capped formula
++   from ratings, return rate and sales before the earned slots are used. */
++CREATE OR ALTER VIEW dbo.vw_EarnedShopCandidates
++AS
++SELECT
++    s.Id AS ShopID,
++    CASE WHEN s.CreatedUtc >= DATEADD(DAY, -90, SYSUTCDATETIME()) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS IsNewShop,
++    CAST(0 AS DECIMAL(9,4)) AS PerformanceScore
++FROM dbo.Shops AS s
++WHERE s.Status = 1;   -- Approved only: suspended, closed or pending shops never appear
++GO
++
++/* ---------- 8. Vendor requests a booking (Pending until reviewed) ------ */
++CREATE OR ALTER PROCEDURE dbo.usp_CreateCampaignBooking
++    @ShopID        INT,
++    @BannerID      INT,
++    @CategoryID    INT = NULL,
++    @StartAt       DATETIME2(0),
++    @EndAt         DATETIME2(0),
++    @Price         DECIMAL(12,2),
++    @ImpressionCap INT = NULL,
++    @PaymentRef    NVARCHAR(100) = NULL,
++    @BookingID     INT OUTPUT
++AS
++BEGIN
++    SET NOCOUNT ON;
++    SET XACT_ABORT ON;
++
++    DECLARE @Model VARCHAR(10) = (SELECT SponsoredBillingModel FROM dbo.PlatformSettings WHERE SettingID = 1);
++    DECLARE @Days DECIMAL(12,4);
++    DECLARE @Rank DECIMAL(12,4);
++
++    IF @EndAt <= @StartAt
++        THROW 50001, N'EndAt must be after StartAt.', 1;
++    IF @Model = 'CPM' AND (@ImpressionCap IS NULL OR @ImpressionCap <= 0)
++        THROW 50002, N'CPM bookings need a positive impression cap.', 1;
++    IF NOT EXISTS (SELECT 1 FROM dbo.VendorBanners WHERE BannerID = @BannerID AND ShopID = @ShopID AND IsApproved = 1)
++        THROW 50003, N'The banner must belong to this shop and be approved.', 1;
++
++    IF @Model = 'DailyRate'
++    BEGIN
++        SET @ImpressionCap = NULL;
++        SET @Days = CAST(DATEDIFF(MINUTE, @StartAt, @EndAt) AS DECIMAL(12,4)) / 1440.0;
++        SET @Rank = @Price / NULLIF(@Days, 0);      -- value per day
++    END
++    ELSE
++        SET @Rank = @Price;                          -- value per 1,000 impressions
++
++    BEGIN TRY
++        BEGIN TRANSACTION;
++
++        -- Serialise bookings per shop so two requests cannot both pass the spacing check.
++        DECLARE @Locked INT;
++        SELECT @Locked = Id FROM dbo.Shops WITH (UPDLOCK, HOLDLOCK) WHERE Id = @ShopID;
++        IF @Locked IS NULL
++            THROW 50004, N'Shop not found.', 1;
++
++        -- One spotlight per shop: no other pending or approved booking within 14 days of these dates.
++        IF EXISTS (SELECT 1 FROM dbo.CampaignBookings
++                   WHERE ShopID = @ShopID
++                     AND Status IN ('Pending', 'Approved')
++                     AND StartAt < DATEADD(DAY, 14, @EndAt)
++                     AND EndAt   > DATEADD(DAY, -14, @StartAt))
++            THROW 50005, N'This shop already has a spotlight within 14 days of these dates.', 1;
++
++        INSERT INTO dbo.CampaignBookings
++            (BannerID, ShopID, CategoryID, BillingModel, Price, RankValue, ImpressionCap,
++             StartAt, EndAt, Status, PaymentRef)
++        VALUES
++            (@BannerID, @ShopID, @CategoryID, @Model, @Price, @Rank, @ImpressionCap,
++             @StartAt, @EndAt, 'Pending', @PaymentRef);
++
++        SET @BookingID = SCOPE_IDENTITY();
++        COMMIT TRANSACTION;
++    END TRY
++    BEGIN CATCH
++        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
++        THROW;
++    END CATCH
++END;
++GO
++
++/* ---------- 9. Admin approves or rejects a pending booking ------------- */
++CREATE OR ALTER PROCEDURE dbo.usp_ReviewCampaignBooking
++    @BookingID  INT,
++    @Approve    BIT,
++    @ReviewedBy NVARCHAR(256)
++AS
++BEGIN
++    SET NOCOUNT ON;
++
++    UPDATE dbo.CampaignBookings
++    SET Status      = CASE WHEN @Approve = 1 THEN 'Approved' ELSE 'Rejected' END,
++        ReviewedBy  = @ReviewedBy,
++        ReviewedUtc = SYSUTCDATETIME()
++    WHERE BookingID = @BookingID AND Status = 'Pending';
++
++    IF @@ROWCOUNT = 0
++        THROW 50006, N'Booking not found or not pending.', 1;
++END;
++GO
++
++/* ---------- 10. Delivery: the four slots for one page ------------------ */
++CREATE OR ALTER PROCEDURE dbo.usp_GetHeroSlots
++    @CategoryID INT = NULL
++AS
++BEGIN
++    SET NOCOUNT ON;
++
++    DECLARE @Now     DATETIME2(0) = SYSUTCDATETIME();
++    DECLARE @Scope   VARCHAR(10)  = CASE WHEN @CategoryID IS NULL THEN 'Home' ELSE 'Category' END;
++    DECLARE @Model   VARCHAR(10)  = (SELECT SponsoredBillingModel FROM dbo.PlatformSettings WHERE SettingID = 1);
++    DECLARE @Pos     TINYINT = 1;
++    DECLARE @Type    VARCHAR(10);
++    DECLARE @PreferNew BIT;
++
++    CREATE TABLE #Slots (
++        Position        TINYINT      NOT NULL PRIMARY KEY,
++        SlotType        VARCHAR(10)  NOT NULL,
++        BookingID       INT          NULL,
++        BannerID        INT          NULL,
++        ShopID          INT          NULL,
++        DesktopImageUrl VARCHAR(512) NULL,
++        MobileImageUrl  VARCHAR(512) NULL,
++        TargetUrl       VARCHAR(512) NULL
++    );
++    CREATE TABLE #UsedShops (ShopID INT NOT NULL PRIMARY KEY);
++
++    WHILE @Pos <= 4
++    BEGIN
++        SET @Type = NULL;
++        SET @PreferNew = 0;
++
++        SELECT @Type = hs.SlotType, @PreferNew = hs.PreferNewShop
++        FROM dbo.HeroSlots AS hs
++        WHERE hs.PageScope = @Scope AND hs.Position = @Pos
++          AND ((hs.CategoryID = @CategoryID) OR (@CategoryID IS NULL AND hs.CategoryID IS NULL));
++
++        IF @Type = 'Platform'
++        BEGIN
++            INSERT INTO #Slots (Position, SlotType, BookingID, BannerID, ShopID, DesktopImageUrl, MobileImageUrl, TargetUrl)
++            SELECT TOP (1) @Pos, 'Platform', b.BookingID, vb.BannerID, NULL,
++                   vb.DesktopImageUrl, vb.MobileImageUrl, vb.TargetUrl
++            FROM dbo.CampaignBookings AS b
++            INNER JOIN dbo.VendorBanners AS vb ON vb.BannerID = b.BannerID
++            WHERE b.BillingModel = 'Platform' AND b.Status = 'Approved'
++              AND @Now BETWEEN b.StartAt AND b.EndAt
++              AND vb.IsApproved = 1 AND vb.ShopID IS NULL
++              AND ((b.CategoryID = @CategoryID) OR (@CategoryID IS NULL AND b.CategoryID IS NULL))
++            ORDER BY b.BookingID DESC;
++        END
++        ELSE IF @Type = 'Sponsored'
++        BEGIN
++            -- Current-model bookings first, then highest value per unit, then random among equals.
++            INSERT INTO #Slots (Position, SlotType, BookingID, BannerID, ShopID, DesktopImageUrl, MobileImageUrl, TargetUrl)
++            SELECT TOP (1) @Pos, 'Sponsored', b.BookingID, vb.BannerID, b.ShopID,
++                   vb.DesktopImageUrl, vb.MobileImageUrl, vb.TargetUrl
++            FROM dbo.CampaignBookings AS b
++            INNER JOIN dbo.VendorBanners AS vb ON vb.BannerID = b.BannerID
++            INNER JOIN dbo.Shops AS s ON s.Id = b.ShopID
++            WHERE b.BillingModel IN ('DailyRate', 'CPM') AND b.Status = 'Approved'
++              AND @Now BETWEEN b.StartAt AND b.EndAt
++              AND (b.ImpressionCap IS NULL OR b.ImpressionsServed < b.ImpressionCap)
++              AND vb.IsApproved = 1 AND s.Status = 1
++              AND NOT EXISTS (SELECT 1 FROM #UsedShops AS u WHERE u.ShopID = b.ShopID)
++              AND ((b.CategoryID = @CategoryID) OR (@CategoryID IS NULL AND b.CategoryID IS NULL))
++            ORDER BY CASE WHEN b.BillingModel = @Model THEN 0 ELSE 1 END,
++                     b.RankValue DESC,
++                     NEWID();
++        END
++        ELSE IF @Type = 'Earned'
++        BEGIN
++            -- Reserved new-shop slot first when PreferNewShop is set, then capped performance score.
++            INSERT INTO #Slots (Position, SlotType, BookingID, BannerID, ShopID, DesktopImageUrl, MobileImageUrl, TargetUrl)
++            SELECT TOP (1) @Pos, 'Earned', NULL, vb.BannerID, vb.ShopID,
++                   vb.DesktopImageUrl, vb.MobileImageUrl, vb.TargetUrl
++            FROM dbo.VendorBanners AS vb
++            INNER JOIN dbo.vw_EarnedShopCandidates AS c ON c.ShopID = vb.ShopID
++            WHERE vb.IsPerkSlot = 1 AND vb.IsApproved = 1
++              AND NOT EXISTS (SELECT 1 FROM #UsedShops AS u WHERE u.ShopID = vb.ShopID)
++              AND ((vb.CategoryID = @CategoryID) OR (@CategoryID IS NULL AND vb.CategoryID IS NULL))
++            ORDER BY CASE WHEN @PreferNew = 1 AND c.IsNewShop = 1 THEN 0 ELSE 1 END,
++                     c.PerformanceScore DESC,
++                     NEWID();
++        END
++
++        -- One shop per page: record the shop so later slots skip it.
++        INSERT INTO #UsedShops (ShopID)
++        SELECT ShopID FROM #Slots WHERE Position = @Pos AND ShopID IS NOT NULL;
++
++        SET @Pos = @Pos + 1;
++    END
++
++    -- Fallback: any slot still empty shows the most recent live Kwikby banner.
++    DECLARE @FbBooking INT, @FbBanner INT, @FbDesk VARCHAR(512), @FbMob VARCHAR(512), @FbTarget VARCHAR(512);
++    SELECT TOP (1)
++        @FbBooking = b.BookingID, @FbBanner = vb.BannerID,
++        @FbDesk = vb.DesktopImageUrl, @FbMob = vb.MobileImageUrl, @FbTarget = vb.TargetUrl
++    FROM dbo.CampaignBookings AS b
++    INNER JOIN dbo.VendorBanners AS vb ON vb.BannerID = b.BannerID
++    WHERE b.BillingModel = 'Platform' AND b.Status = 'Approved'
++      AND @Now BETWEEN b.StartAt AND b.EndAt AND vb.IsApproved = 1 AND vb.ShopID IS NULL
++      AND ((b.CategoryID = @CategoryID) OR (@CategoryID IS NULL AND b.CategoryID IS NULL))
++    ORDER BY b.BookingID DESC;
++
++    IF @FbBanner IS NOT NULL
++        INSERT INTO #Slots (Position, SlotType, BookingID, BannerID, ShopID, DesktopImageUrl, MobileImageUrl, TargetUrl)
++        SELECT hs.Position, 'Platform', @FbBooking, @FbBanner, NULL, @FbDesk, @FbMob, @FbTarget
++        FROM dbo.HeroSlots AS hs
++        WHERE hs.PageScope = @Scope
++          AND ((hs.CategoryID = @CategoryID) OR (@CategoryID IS NULL AND hs.CategoryID IS NULL))
++          AND NOT EXISTS (SELECT 1 FROM #Slots AS s WHERE s.Position = hs.Position);
++
++    SELECT Position, SlotType, BookingID, BannerID, ShopID, DesktopImageUrl, MobileImageUrl, TargetUrl
++    FROM #Slots
++    ORDER BY Position;
++END;
++GO
++
++/* ---------- 11. Record one impression (called fire-and-forget) --------- */
++CREATE OR ALTER PROCEDURE dbo.usp_RecordHeroImpression
++    @BookingID INT
++AS
++BEGIN
++    SET NOCOUNT ON;
++    INSERT INTO dbo.HeroImpressionStaging (BookingID) VALUES (@BookingID);
++END;
++GO
++
++/* ---------- 12. Scheduled job (every 5 minutes): flush impressions ----- */
++/* Rows newer than 30 seconds are left for the next run, so an in-flight
++   insert is never counted half-way. Only the rows counted are deleted.
++   READPAST lets the job skip rows another session is writing. */
++CREATE OR ALTER PROCEDURE dbo.usp_FlushHeroImpressions
++AS
++BEGIN
++    SET NOCOUNT ON;
++    SET XACT_ABORT ON;
++
++    DECLARE @Cutoff DATETIME2(3) = DATEADD(SECOND, -30, SYSUTCDATETIME());
++    DECLARE @Now    DATETIME2(0) = SYSUTCDATETIME();
++
++    CREATE TABLE #Batch (
++        ImpressionID BIGINT NOT NULL PRIMARY KEY,
++        BookingID    INT    NOT NULL
++    );
++
++    INSERT INTO #Batch (ImpressionID, BookingID)
++    SELECT TOP (50000) s.ImpressionID, s.BookingID
++    FROM dbo.HeroImpressionStaging AS s WITH (UPDLOCK, READPAST, ROWLOCK)
++    WHERE s.ViewedUtc < @Cutoff
++    ORDER BY s.ImpressionID;
++
++    IF NOT EXISTS (SELECT 1 FROM #Batch)
++    BEGIN
++        -- Nothing to count, but still end bookings whose time has passed.
++        UPDATE dbo.CampaignBookings
++        SET Status = 'Ended'
++        WHERE Status = 'Approved' AND EndAt < @Now;
++        RETURN;
++    END
++
++    BEGIN TRY
++        BEGIN TRANSACTION;
++
++        UPDATE b
++        SET b.ImpressionsServed = b.ImpressionsServed + x.Hits
++        FROM dbo.CampaignBookings AS b
++        INNER JOIN (SELECT BookingID, COUNT(*) AS Hits FROM #Batch GROUP BY BookingID) AS x
++            ON x.BookingID = b.BookingID;
++
++        DELETE s
++        FROM dbo.HeroImpressionStaging AS s
++        INNER JOIN #Batch AS t ON t.ImpressionID = s.ImpressionID;
++
++        UPDATE dbo.CampaignBookings
++        SET Status = 'Ended'
++        WHERE Status = 'Approved'
++          AND (EndAt < @Now OR (ImpressionCap IS NOT NULL AND ImpressionsServed >= ImpressionCap));
++
++        COMMIT TRANSACTION;
++    END TRY
++    BEGIN CATCH
++        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
++        THROW;
++    END CATCH
++END;
++GO
+diff --git a/Database/README.md b/Database/README.md
+new file mode 100644
+index 0000000..10e4ac1
+--- /dev/null
++++ b/Database/README.md
+@@ -0,0 +1,29 @@
++# Kwikby database
++
++Run the scripts in this order on the `KwikbyMP` SQL Server database.
++
++| Order | File | What it does |
++|---|---|---|
++| 1 | `00_Schema.sql` | All marketplace tables, keys, indexes and foreign keys. Generated from the EF Core model by `01_GenerateSchema.ps1`. |
++| 2 | `02_StoredProcedures.sql` | Search, product detail, vendor and platform dashboards, and atomic stock adjustment. |
++| 3 | `03_HeroEngine.sql` | Hero banner tables, indexes, the earned-shop view, and the booking, delivery and impression procedures. |
++
++## Generating the schema
++
++`00_Schema.sql` is generated, not hand-written. It must be produced from the same model the application runs on, otherwise the tables and the code can disagree.
++
++```powershell
++cd <repository root>
++./Database/01_GenerateSchema.ps1
++```
++
++This script adds the EF Core design package, creates a migration named `InitialSchema`, and writes an idempotent SQL script. Commit the generated `Data/Migrations` folder with the code.
++
++Once the schema is generated, the application should apply migrations at start-up in place of `EnsureCreated`. The existing `*Schema.cs` helper classes can then be retired.
++
++## Notes
++
++- Procedures run in the same database as the EF Core context. They use the EF column names, which are the property names.
++- Order placement, payments and the vendor ledger stay in the C# services, which are unit-tested. Stored procedures cover reads and atomic stock changes only.
++- Keep the scripts idempotent. Use `IF OBJECT_ID(...) IS NULL` for tables and `CREATE OR ALTER` for procedures and views.
++- Run these scripts against a test copy before production.
+diff --git a/Views/Home/Index.cshtml b/Views/Home/Index.cshtml
+index bcfd79a..c643f70 100644
+--- a/Views/Home/Index.cshtml
++++ b/Views/Home/Index.cshtml
+@@ -1,8 +1,376 @@
+-﻿@{
+-    ViewData["Title"] = "Home Page";
++@{
++    ViewData["Title"] = "Home";
+ }
+ 
+-<div class="text-center">
+-    <h1 class="display-4">Welcome</h1>
+-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
++<div class="kw-home" id="kw-home-root">
++  <section class="kw-carousel" data-kw-carousel aria-roledescription="carousel" aria-label="Featured">
++    <div class="kw-slide kw-slide--campaign is-active" data-kw-slide role="group" aria-roledescription="slide" aria-label="1 of 4" aria-hidden="false">
++      <span class="kw-slide__label">Kwikby picks</span>
++      <h1 class="">Find something made by hand</h1>
++      <p>Independent makers across Lebanon, with delivery on selected shops.</p>
++      <a class="kw-btn kw-btn--primary" href="#">Shop new arrivals</a>
++    </div>
++    <div class="kw-slide kw-slide--campaign" data-kw-slide role="group" aria-roledescription="slide" aria-label="2 of 4" aria-hidden="true">
++      <span class="kw-slide__label">Campaign: spring edit</span>
++      <h1 class="">Fresh pieces from this week's makers</h1>
++      <p>Hand-picked by our editors, updated every Monday.</p>
++      <a class="kw-btn kw-btn--primary" href="#">Shop the edit</a>
++    </div>
++    <div class="kw-slide kw-slide--shop" data-kw-slide role="group" aria-roledescription="slide" aria-label="3 of 4" aria-hidden="true">
++      <span class="kw-slide__label">Shop spotlight</span>
++      <h1 class="">Leather goods made in the Bekaa Valley</h1>
++      <p>Atelier Bekaa has 4.9 stars from over 400 buyers.</p>
++      <div class="kw-slide__shop"><div class="kw-slide__avatar" aria-hidden="true">A</div><div><strong>Atelier Bekaa</strong><div class="kw-small">Beirut · Leather goods</div></div></div><a class="kw-btn kw-btn--primary" href="#">Visit Atelier Bekaa</a>
++    </div>
++    <div class="kw-slide kw-slide--category" data-kw-slide role="group" aria-roledescription="slide" aria-label="4 of 4" aria-hidden="true">
++      <span class="kw-slide__label">Category spotlight</span>
++      <h1 class="">Top-rated jewellery makers</h1>
++      <p>Three shops with the best recent ratings in jewellery this month.</p>
++      <a class="kw-btn kw-btn--primary" href="#">Browse jewellery</a>
++    </div>
++    <div class="kw-carousel__controls">
++      <ul class="kw-dots" aria-label="Choose slide"><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 1" aria-current="true"></button></li><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 2" aria-current="false"></button></li><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 3" aria-current="false"></button></li><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 4" aria-current="false"></button></li></ul>
++      <div class="kw-carousel__buttons">
++        <button class="kw-carousel__btn kw-carousel__btn--arrow" type="button" data-kw-prev aria-label="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
++        <button class="kw-carousel__btn kw-carousel__pause" type="button" data-kw-pause aria-pressed="false" aria-label="Pause slideshow"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g class="kw-pause-bars"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></g><path class="kw-play-tri" d="M8 5l11 7-11 7z"/></svg></button>
++        <button class="kw-carousel__btn kw-carousel__btn--arrow" type="button" data-kw-next aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
++      </div>
++    </div>
++  </section>
++
++
++    <section class="kw-section" aria-labelledby="deals-title">
++      <div class="kw-section__head"><h2 id="deals-title">Hot deals</h2><a href="#">See all deals</a></div>
++      <p class="kw-muted kw-small" style="margin:-6px 0 14px">Sale prices ordered by discount. Deals end 1 November.</p><ul class="kw-grid"><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Stoneware planter with drainage tray">P</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 24%</span></div>
++    <h3 class="kw-card__title">Stoneware planter with drainage tray</h3>
++    <div class="kw-card__shop">Tellar Ceramics</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (118)</span></div>
++    <div class="kw-card__price"><s>$41.00</s><span class="kw-sale">$31.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Hand-woven wool throw, navy stripe">T</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 25%</span></div>
++    <h3 class="kw-card__title">Hand-woven wool throw, navy stripe</h3>
++    <div class="kw-card__shop">Loom &amp; Thread</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (73)</span></div>
++    <div class="kw-card__price"><s>$96.00</s><span class="kw-sale">$72.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Cedar soap gift box with botanicals">S</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 21%</span></div>
++    <h3 class="kw-card__title">Cedar soap gift box with botanicals</h3>
++    <div class="kw-card__shop">Cedar Gifts Co.</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.7 (651)</span></div>
++    <div class="kw-card__price"><s>$28.00</s><span class="kw-sale">$22.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Personalised birth-year print, A3">P</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 33%</span></div>
++    <h3 class="kw-card__title">Personalised birth-year print, A3</h3>
++    <div class="kw-card__shop">Ink &amp; Paper Co.</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (540)</span></div>
++    <div class="kw-card__price"><s>$42.00</s><span class="kw-sale">$28.00</span></div>
++  </a>
++</li></ul>
++    </section>
++
++    <section class="kw-section" aria-labelledby="popular-title">
++      <div class="kw-section__head"><h2 id="popular-title">Most popular</h2><a href="#">View all</a></div>
++      <ul class="kw-grid"><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Hand-stitched leather journal, A5">B</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Star seller</span></div>
++    <h3 class="kw-card__title">Hand-stitched leather journal, A5</h3>
++    <div class="kw-card__shop">Atelier Bekaa</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (412)</span></div>
++    <div class="kw-card__price"><span class="">$38.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Olive wood cutting board">W</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Free shipping</span></div>
++    <h3 class="kw-card__title">Olive wood cutting board</h3>
++    <div class="kw-card__shop">Jbeil Woodworks</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (188)</span></div>
++    <div class="kw-card__price"><span class="">$52.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Ceramic pour-over coffee set">C</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    
++    <h3 class="kw-card__title">Ceramic pour-over coffee set</h3>
++    <div class="kw-card__shop">Clay &amp; Kiln Studio</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>5.0 (97)</span></div>
++    <div class="kw-card__price"><span class="">$74.50</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Minimal brass wall hook set">F</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    
++    <h3 class="kw-card__title">Minimal brass wall hook set</h3>
++    <div class="kw-card__shop">Forge Lane</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.6 (230)</span></div>
++    <div class="kw-card__price"><span class="">$29.00</span></div>
++  </a>
++</li></ul>
++    </section>
++
++    <section class="kw-section" aria-labelledby="picks-title">
++      <div class="kw-section__head"><h2 id="picks-title">Picked for you</h2><a href="#">Browse all products</a></div>
++      <ul class="kw-chips" aria-label="Quick filters"><li><a class="kw-chip" href="#" aria-current="true">All</a></li><li><a class="kw-chip" href="#">Free shipping</a></li><li><a class="kw-chip" href="#">On sale</a></li><li><a class="kw-chip" href="#">Star sellers</a></li><li><a class="kw-chip" href="#">Under $25</a></li></ul>
++      <div class="kw-pick-toolbar"><span class="kw-results-count">1,284 results</span><div class="kw-pick-toolbar__selects"><label class="kw-visually-hidden" for="kw-pick-cat">Category</label><select id="kw-pick-cat" class="kw-select" data-kw-autosubmit><option>All categories</option><option>Jewellery</option><option>Home &amp; Living</option><option>Art &amp; Prints</option><option>Gifts</option><option>Vintage</option><option>Bags &amp; Leather</option><option>Clothing &amp; Accessories</option><option>Crafts &amp; Supplies</option><option>Wedding</option></select><label class="kw-visually-hidden" for="kw-pick-sort">Sort by</label><select id="kw-pick-sort" class="kw-select" data-kw-autosubmit><option>Relevance</option><option>Price: low to high</option><option>Price: high to low</option><option>Best rated</option><option>Newest</option></select></div></div>
++      <ul class="kw-grid"><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Linen table runner, natural">L</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    
++    <h3 class="kw-card__title">Linen table runner, natural</h3>
++    <div class="kw-card__shop">Loom &amp; Thread</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (96)</span></div>
++    <div class="kw-card__price"><span class="">$34.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Hand-thrown mug, speckled glaze">M</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Star seller</span></div>
++    <h3 class="kw-card__title">Hand-thrown mug, speckled glaze</h3>
++    <div class="kw-card__shop">Clay &amp; Kiln Studio</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (204)</span></div>
++    <div class="kw-card__price"><span class="">$26.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Brass pendant necklace, small">N</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Sale</span></div>
++    <h3 class="kw-card__title">Brass pendant necklace, small</h3>
++    <div class="kw-card__shop">Forge Lane</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.7 (131)</span></div>
++    <div class="kw-card__price"><s>$55.00</s><span class="kw-sale">$44.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Set of four wooden coasters">C</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Free shipping</span></div>
++    <h3 class="kw-card__title">Set of four wooden coasters</h3>
++    <div class="kw-card__shop">Jbeil Woodworks</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (77)</span></div>
++    <div class="kw-card__price"><span class="">$18.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Vintage-style botanical print">V</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    
++    <h3 class="kw-card__title">Vintage-style botanical print</h3>
++    <div class="kw-card__shop">Ink &amp; Paper Co.</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.6 (312)</span></div>
++    <div class="kw-card__price"><span class="">$21.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Soy candle, fig and oak">S</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Sale</span></div>
++    <h3 class="kw-card__title">Soy candle, fig and oak</h3>
++    <div class="kw-card__shop">Hive &amp; Wick</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (158)</span></div>
++    <div class="kw-card__price"><s>$24.00</s><span class="kw-sale">$19.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Canvas tote with leather handles">T</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Star seller</span></div>
++    <h3 class="kw-card__title">Canvas tote with leather handles</h3>
++    <div class="kw-card__shop">Atelier Bekaa</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (64)</span></div>
++    <div class="kw-card__price"><span class="">$52.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Ceramic dish set, blue and white">D</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    
++    <h3 class="kw-card__title">Ceramic dish set, blue and white</h3>
++    <div class="kw-card__shop">Tellar Ceramics</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (145)</span></div>
++    <div class="kw-card__price"><span class="">$39.00</span></div>
++  </a>
++</li></ul>
++    </section>
++    <section class="kw-section" aria-labelledby="season-title">
++      <div class="kw-section__head"><h2 id="season-title">Best for this season</h2><a href="#">Browse collections</a></div>
++      <ul class="kw-seasons">
++  <li class="kw-season"><a href="#"><span class="kw-season__eyebrow">Autumn</span><h3>Cosy home picks</h3></a></li>
++  <li class="kw-season kw-season--green"><a href="#"><span class="kw-season__eyebrow">Back to school</span><h3>Notebooks and desk tools</h3></a></li>
++  <li class="kw-season kw-season--ink"><a href="#"><span class="kw-season__eyebrow">Holiday</span><h3>Gifts under $40</h3></a></li>
++</ul>
++    </section>
++
++    <section class="kw-section kw-section--more" aria-labelledby="new-title">
++      <div class="kw-section__head"><h2 id="new-title">New arrivals</h2><a href="#">See all new</a></div>
++      <ul class="kw-grid"><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Beeswax candle trio, unscented">B</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
++    <h3 class="kw-card__title">Beeswax candle trio, unscented</h3>
++    <div class="kw-card__shop">Hive &amp; Wick</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
++    <div class="kw-card__price"><span class="">$24.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb" role="img" aria-label="Embroidered linen tote bag">E</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
++    <h3 class="kw-card__title">Embroidered linen tote bag</h3>
++    <div class="kw-card__shop">Loom &amp; Thread</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
++    <div class="kw-card__price"><span class="">$46.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Enamel pin set, botanical">E</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
++    <h3 class="kw-card__title">Enamel pin set, botanical</h3>
++    <div class="kw-card__shop">Pin &amp; Petal</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
++    <div class="kw-card__price"><span class="">$18.00</span></div>
++  </a>
++</li><li class="kw-card">
++  <div class="kw-card__media">
++    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Walnut serving spoons, pair">W</div>
++    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
++      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++    </button>
++  </div>
++  <a class="kw-card__link" href="#">
++    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
++    <h3 class="kw-card__title">Walnut serving spoons, pair</h3>
++    <div class="kw-card__shop">Jbeil Woodworks</div>
++    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
++    <div class="kw-card__price"><span class="">$33.00</span></div>
++  </a>
++</li></ul>
++    </section>
++
++    <section class="kw-section kw-section--more" aria-labelledby="shops-title">
++      <div class="kw-section__head"><h2 id="shops-title">Top shops</h2><a href="#">Explore shops</a></div>
++      <ul class="kw-shops"><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">A</div><a class="kw-shopcard__name" href="#">Atelier Bekaa</a><div class="kw-shopcard__meta">Bekaa Valley</div><div class="kw-shopcard__meta">Leather goods, 4.9 rating</div></div></article></li><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">C</div><a class="kw-shopcard__name" href="#">Clay &amp; Kiln Studio</a><div class="kw-shopcard__meta">Beirut</div><div class="kw-shopcard__meta">Handmade ceramics, 5.0 rating</div></div></article></li><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">J</div><a class="kw-shopcard__name" href="#">Jbeil Woodworks</a><div class="kw-shopcard__meta">Jbeil</div><div class="kw-shopcard__meta">Olive wood and walnut, 4.8 rating</div></div></article></li><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">T</div><a class="kw-shopcard__name" href="#">Tellar Ceramics</a><div class="kw-shopcard__meta">Tripoli</div><div class="kw-shopcard__meta">Stoneware planters, 4.9 rating</div></div></article></li></ul>
++    </section>
++
++    <section class="kw-section kw-section--more" aria-labelledby="gifts-title">
++      <div class="kw-section__head"><h2 id="gifts-title">Gift guides</h2><a href="#">All gift guides</a></div>
++      <ul class="kw-tiles">
++  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">For her</div></a></li>
++  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">For him</div></a></li>
++  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">For kids</div></a></li>
++  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">Under $25</div></a></li>
++</ul>
++    </section>
++
++    <section class="kw-section kw-section--more" aria-label="Why shop on Kwikby">
++<ul class="kw-trust">
++  <li><span class="kw-trust__icon" aria-hidden="true">✓</span><div><strong>Fast delivery</strong><span class="kw-muted">Free over $40 from selected shops</span></div></li>
++  <li><span class="kw-trust__icon" aria-hidden="true">$</span><div><strong>Pay your way</strong><span class="kw-muted">Cash on delivery or card</span></div></li>
++  <li><span class="kw-trust__icon" aria-hidden="true">↺</span><div><strong>Easy returns</strong><span class="kw-muted">Request a return from your orders</span></div></li>
++  <li><span class="kw-trust__icon" aria-hidden="true">★</span><div><strong>Verified reviews</strong><span class="kw-muted">Only buyers can review a product</span></div></li>
++</ul>
++    </section>
++  <div style="text-align:center"><button class="kw-btn kw-btn--outline kw-more-toggle" type="button" aria-expanded="false" aria-controls="kw-home-root" data-kw-more>See more sections</button></div>
+ </div>
+diff --git a/Views/Shared/_Layout.cshtml b/Views/Shared/_Layout.cshtml
+index 728548f..4134d59 100644
+--- a/Views/Shared/_Layout.cshtml
++++ b/Views/Shared/_Layout.cshtml
+@@ -1,50 +1,139 @@
+-﻿<!DOCTYPE html>
++<!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="utf-8" />
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+-    <title>@ViewData["Title"] - Kwikby_MP</title>
+-    <script type="importmap"></script>
+-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+-    <link rel="stylesheet" href="~/Kwikby_MP.styles.css" asp-append-version="true" />
++    <meta name="viewport" content="width=device-width, initial-scale=1" />
++    <title>@ViewData["Title"] | Kwikby</title>
++    <link rel="stylesheet" href="~/css/kwikby.css" asp-append-version="true" />
+ </head>
+ <body>
+-    <header>
+-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+-            <div class="container-fluid">
+-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Kwikby_MP</a>
+-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+-                        aria-expanded="false" aria-label="Toggle navigation">
+-                    <span class="navbar-toggler-icon"></span>
+-                </button>
+-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+-                    <ul class="navbar-nav flex-grow-1">
+-                        <li class="nav-item">
+-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+-                        </li>
+-                        <li class="nav-item">
+-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+-                        </li>
+-                    </ul>
+-                </div>
+-            </div>
+-        </nav>
+-    </header>
+-    <div class="container">
+-        <main role="main" class="pb-3">
+-            @RenderBody()
+-        </main>
+-    </div>
++    <a class="kw-skip" href="#main">Skip to content</a>
+ 
+-    <footer class="border-top footer text-muted">
+-        <div class="container">
+-            &copy; 2026 - Kwikby_MP - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
++    <header class="kw-header">
++  <div class="kw-container kw-header__bar">
++    <a class="kw-logo" href="#" aria-label="Kwikby home"><img src="~/images/kwikby_logo.png" alt="Kwikby" width="44" height="44"></a>
++    <form class="kw-search" role="search" action="#" onsubmit="return false;">
++      <label class="kw-visually-hidden" for="kw-q">Search for anything</label>
++      <input id="kw-q" class="kw-search__input" type="search" placeholder="Search for anything" autocomplete="off"
++             aria-expanded="false" aria-controls="kw-suggest-list" data-kw-suggest>
++      <ul id="kw-suggest-list" class="kw-suggest" role="listbox"></ul>
++      <button class="kw-search__submit" type="submit" aria-label="Search">
++        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
++      </button>
++    </form>
++    <div class="kw-header__actions">
++      <a class="kw-header__link" href="#">Sign in</a>
++      <a class="kw-header__link" href="#">Sell on Kwikby</a>
++      <button class="kw-icon-btn" type="button" aria-label="Favourites">
++        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
++      </button>
++      <a class="kw-icon-btn" href="#" aria-label="Cart, 2 items">
++        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M6 6L5 3H2"/></svg>
++        <span class="kw-count">2</span>
++      </a>
++    </div>
++  </div>
++  <nav class="kw-nav" aria-label="Main">
++    <div class="kw-container kw-nav__inner">
++      <div class="kw-menu">
++        <button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="kw-categories" data-kw-menu-trigger>
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
++          <span>Categories</span>
++        </button>
++        <div id="kw-categories" class="kw-categories" hidden>
++          <ul class="kw-categories__list">
++          <li><a class="kw-categories__link" href="#">Jewellery<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Home &amp; Living<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Art &amp; Prints<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Gifts<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Vintage<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Bags &amp; Leather<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Clothing &amp; Accessories<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Crafts &amp; Supplies<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          <li><a class="kw-categories__link" href="#">Wedding<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
++          </ul>
++          <a class="kw-categories__all" href="#">All categories</a>
+         </div>
+-    </footer>
+-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+-    <script src="~/js/site.js" asp-append-version="true"></script>
++      </div>
++
++      <ul class="kw-nav__list" aria-label="Browse">
++        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-new" data-kw-menu-trigger><span>New arrivals</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
++        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-deals" data-kw-menu-trigger><span>Deals</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
++        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-gifts" data-kw-menu-trigger><span>Gifts</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
++        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-shops" data-kw-menu-trigger><span>Shops</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
++        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-brands" data-kw-menu-trigger><span>Brands</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
++        <li><a class="kw-nav__link kw-menu__trigger" href="#">Sell</a></li>
++      </ul>
++    </div>
++
++  <div id="mega-new" class="kw-mega" hidden>
++    <div class="kw-container kw-mega__inner">
++      <div><h3>Shop new</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">All new arrivals</a></li><li><a class="kw-mega__link" href="#">Last 24 hours</a></li><li><a class="kw-mega__link" href="#">Last 7 days</a></li><li><a class="kw-mega__link" href="#">Back in stock</a></li></ul></div>
++      <div><h3>By category</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Jewellery</a></li><li><a class="kw-mega__link" href="#">Home &amp; Living</a></li><li><a class="kw-mega__link" href="#">Art &amp; Prints</a></li></ul></div>
++      <div><h3>Local makers</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">New from Beirut</a></li><li><a class="kw-mega__link" href="#">New from Tripoli</a></li><li><a class="kw-mega__link" href="#">New from Jbeil</a></li></ul></div>
++      <div class="kw-promo"><span class="kw-promo__eyebrow">Spring edit</span><h4>Fresh pieces from this week's makers</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Shop the edit</a></div>
++    </div>
++  </div>
++  <div id="mega-deals" class="kw-mega" hidden>
++    <div class="kw-container kw-mega__inner">
++      <div><h3>By discount</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Up to 25% off</a></li><li><a class="kw-mega__link" href="#">Up to 50% off</a></li><li><a class="kw-mega__link" href="#">Flash sales, ending soon</a></li></ul></div>
++      <div><h3>Free shipping</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Free shipping over $40</a></li><li><a class="kw-mega__link" href="#">Free delivery in Lebanon</a></li></ul></div>
++      <div><h3>Clearance</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Last chance sales</a></li><li><a class="kw-mega__link" href="#">Shops clearing stock</a></li></ul></div>
++      <div class="kw-promo kw-promo--green"><span class="kw-promo__eyebrow">Ends tonight</span><h4>Deals that finish before midnight</h4><a class="kw-btn kw-btn--outline kw-small" href="#">See all deals</a></div>
++    </div>
++  </div>
++  <div id="mega-gifts" class="kw-mega" hidden>
++    <div class="kw-container kw-mega__inner">
++      <div><h3>Gift guides</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">For her</a></li><li><a class="kw-mega__link" href="#">For him</a></li><li><a class="kw-mega__link" href="#">For kids</a></li><li><a class="kw-mega__link" href="#">Under $25</a></li></ul></div>
++      <div><h3>By occasion</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Weddings</a></li><li><a class="kw-mega__link" href="#">Birthdays</a></li><li><a class="kw-mega__link" href="#">Housewarming</a></li><li><a class="kw-mega__link" href="#">Corporate gifts</a></li></ul></div>
++      <div><h3>Gift cards</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Buy a gift card</a></li><li><a class="kw-mega__link" href="#">Redeem a gift card</a></li></ul></div>
++      <div class="kw-promo"><span class="kw-promo__eyebrow">Gift guide</span><h4>Gifts for every occasion, from makers you can trust</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Browse gift guides</a></div>
++    </div>
++  </div>
++  <div id="mega-shops" class="kw-mega" hidden>
++    <div class="kw-container kw-mega__inner">
++      <div><h3>Browse shops</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Star sellers</a></li><li><a class="kw-mega__link" href="#">Top rated shops</a></li><li><a class="kw-mega__link" href="#">New shops</a></li><li><a class="kw-mega__link" href="#">Shops that ship fast</a></li></ul></div>
++      <div><h3>By city</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Beirut</a></li><li><a class="kw-mega__link" href="#">Tripoli</a></li><li><a class="kw-mega__link" href="#">Jbeil</a></li><li><a class="kw-mega__link" href="#">Saida</a></li></ul></div>
++      <div><h3>Community</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Meet our makers</a></li><li><a class="kw-mega__link" href="#">Shop of the week</a></li></ul></div>
++      <div class="kw-promo"><span class="kw-promo__eyebrow">Makers</span><h4>Meet the shops behind the products</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Explore shops</a></div>
++    </div>
++  </div>
++  <div id="mega-brands" class="kw-mega" hidden>
++    <div class="kw-container kw-mega__inner">
++      <div><h3>Featured brands</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Atelier Bekaa</a></li><li><a class="kw-mega__link" href="#">Jbeil Woodworks</a></li><li><a class="kw-mega__link" href="#">Clay &amp; Kiln Studio</a></li></ul></div>
++      <div><h3>Directory</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">A to Z brands</a></li><li><a class="kw-mega__link" href="#">New brands</a></li><li><a class="kw-mega__link" href="#">Heritage brands</a></li></ul></div>
++      <div><h3>Collections</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Lebanese craft</a></li><li><a class="kw-mega__link" href="#">Sustainable picks</a></li></ul></div>
++      <div class="kw-promo"><span class="kw-promo__eyebrow">Brands</span><h4>Curated brands, chosen by our editors</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Browse brands</a></div>
++    </div>
++  </div>
++
++  </nav>
++</header>
++
++    <main id="main" class="kw-container">
++        @RenderBody()
++    </main>
++
++    <footer class="kw-footer">
++  <div class="kw-container">
++    <div class="kw-footer__grid">
++      <div class="kw-footer__brand">
++        <img src="~/images/kwikby_logo.png" alt="Kwikby" width="40" height="40">
++        <p>A marketplace for independent makers and small shops in Lebanon.</p>
++        <a class="kw-btn kw-btn--outline kw-small" href="#">Start selling</a>
++      </div>
++      <nav aria-labelledby="f1"><h2 id="f1">Shop</h2><ul><li><a href="#">Categories</a></li><li><a href="#">Gift cards</a></li><li><a href="#">New arrivals</a></li></ul></nav>
++      <nav aria-labelledby="f2"><h2 id="f2">Sell</h2><ul><li><a href="#">Open a shop</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Fees</a></li></ul></nav>
++      <nav aria-labelledby="f3"><h2 id="f3">Help</h2><ul><li><a href="#">Help centre</a></li><li><a href="#">Returns</a></li><li><a href="#">Contact</a></li></ul></nav>
++    </div>
++    <div class="kw-footer__bottom">
++      <span>&copy; 2026 Kwikby. All rights reserved.</span>
++      <span><a href="#">Privacy</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Cookies</a></span>
++    </div>
++  </div>
++</footer>
++
++    <script src="~/js/kwikby.js" asp-append-version="true" defer></script>
+     @await RenderSectionAsync("Scripts", required: false)
+ </body>
+ </html>
+diff --git a/wwwroot/css/kwikby.css b/wwwroot/css/kwikby.css
+new file mode 100644
+index 0000000..d8a44c1
+--- /dev/null
++++ b/wwwroot/css/kwikby.css
+@@ -0,0 +1,2068 @@
++/* ==========================================================================
++   kwikby.css: design system for the Kwikby multi-vendor marketplace.
++
++   Palette is taken from the logo: blue #315D9E, green #3BAF29.
++   Structure follows a marketplace listing layout: a search-first header,
++   a category row, a product grid of cards, filter sidebar, shop pages, footer.
++
++   Razor views use the kw-* class names below. Change the tokens in :root to
++   re-theme the whole site; no component hard-codes a colour.
++   ========================================================================== */
++
++/* ---------- 1. Design tokens ----------------------------------------------- */
++:root {
++    /* Brand (from the logo) */
++    --kw-blue: #315d9e;
++    --kw-blue-dark: #24477a;
++    --kw-blue-darker: #1a3360;
++    --kw-blue-light: #4f7fc0;
++    --kw-blue-tint: #e8effa;
++
++    --kw-green: #3baf29;
++    --kw-green-dark: #2f8f20;
++    --kw-green-light: #6cc95a;
++    --kw-green-tint: #e9f7e4;
++
++    /* Neutrals */
++    --kw-ink: #1f2a37;
++    --kw-ink-muted: #4b5563;
++    --kw-ink-subtle: #6b7280;
++    --kw-surface: #ffffff;
++    --kw-surface-muted: #f6f7f9;
++    --kw-surface-raised: #eef1f5;
++    --kw-border: #e3e7ee;
++    --kw-border-strong: #cfd6e0;
++
++    /* Status */
++    --kw-star: #f5a623;
++    --kw-danger: #d64545;
++    --kw-danger-tint: #fdecec;
++    --kw-warning: #b7791f;
++    --kw-warning-tint: #fdf6e3;
++
++    /* Shape and depth */
++    --kw-radius-sm: 6px;
++    --kw-radius: 10px;
++    --kw-radius-lg: 16px;
++    --kw-shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
++    --kw-shadow: 0 2px 8px rgba(15, 23, 42, .08);
++    --kw-shadow-lg: 0 10px 30px rgba(15, 23, 42, .14);
++
++    /* Type */
++    --kw-font: "Inter", "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
++    --kw-font-size: 15px;
++    --kw-line: 1.5;
++
++    /* Layout */
++    --kw-container: 1280px;
++    --kw-header-h: 72px;
++    --kw-focus: 0 0 0 3px rgba(49, 93, 158, .35);
++    --kw-transition: .18s ease;
++}
++
++/* ---------- 2. Base ------------------------------------------------------- */
++*,
++*::before,
++*::after {
++    box-sizing: border-box;
++}
++
++html {
++    -webkit-text-size-adjust: 100%;
++    scroll-padding-top: calc(var(--kw-header-h) + 12px);
++}
++
++body {
++    margin: 0;
++    font-family: var(--kw-font);
++    font-size: var(--kw-font-size);
++    line-height: var(--kw-line);
++    color: var(--kw-ink);
++    background: var(--kw-surface-muted);
++}
++
++img {
++    max-width: 100%;
++    height: auto;
++    display: block;
++}
++
++a {
++    color: var(--kw-blue);
++    text-decoration: none;
++}
++
++a:hover {
++    color: var(--kw-blue-dark);
++    text-decoration: underline;
++}
++
++:focus-visible {
++    outline: none;
++    box-shadow: var(--kw-focus);
++    border-radius: var(--kw-radius-sm);
++}
++
++h1, h2, h3, h4 {
++    margin: 0 0 .5rem;
++    line-height: 1.25;
++    font-weight: 700;
++    color: var(--kw-ink);
++}
++
++h1 { font-size: 1.75rem; }
++h2 { font-size: 1.3rem; }
++h3 { font-size: 1.05rem; }
++
++p {
++    margin: 0 0 1rem;
++}
++
++.kw-muted {
++    color: var(--kw-ink-subtle);
++}
++
++.kw-small {
++    font-size: .85rem;
++}
++
++.kw-visually-hidden {
++    position: absolute !important;
++    width: 1px;
++    height: 1px;
++    overflow: hidden;
++    clip: rect(0 0 0 0);
++    white-space: nowrap;
++}
++
++.kw-container {
++    width: 100%;
++    max-width: var(--kw-container);
++    margin-inline: auto;
++    padding-inline: 16px;
++}
++
++/* ---------- 3. Buttons ---------------------------------------------------- */
++.kw-btn {
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: .45rem;
++    min-height: 42px;
++    padding: .55rem 1.1rem;
++    border: 1px solid transparent;
++    border-radius: 999px;
++    font: inherit;
++    font-weight: 600;
++    line-height: 1.1;
++    cursor: pointer;
++    text-decoration: none;
++    transition: background var(--kw-transition), color var(--kw-transition),
++                border-color var(--kw-transition), box-shadow var(--kw-transition);
++}
++
++.kw-btn:hover {
++    text-decoration: none;
++}
++
++.kw-btn--primary {
++    background: var(--kw-green);
++    color: #fff;
++}
++
++.kw-btn--primary:hover {
++    background: var(--kw-green-dark);
++    color: #fff;
++}
++
++.kw-btn--brand {
++    background: var(--kw-blue);
++    color: #fff;
++}
++
++.kw-btn--brand:hover {
++    background: var(--kw-blue-dark);
++    color: #fff;
++}
++
++.kw-btn--outline {
++    background: var(--kw-surface);
++    border-color: var(--kw-border-strong);
++    color: var(--kw-ink);
++}
++
++.kw-btn--outline:hover {
++    border-color: var(--kw-blue);
++    color: var(--kw-blue);
++}
++
++.kw-btn--ghost {
++    background: transparent;
++    color: var(--kw-blue);
++    padding-inline: .5rem;
++}
++
++.kw-btn--ghost:hover {
++    background: var(--kw-blue-tint);
++}
++
++.kw-btn--block {
++    width: 100%;
++}
++
++.kw-btn[disabled],
++.kw-btn[aria-disabled="true"] {
++    opacity: .55;
++    cursor: not-allowed;
++}
++
++.kw-icon-btn {
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    width: 42px;
++    height: 42px;
++    border: 0;
++    border-radius: 50%;
++    background: transparent;
++    color: var(--kw-ink);
++    cursor: pointer;
++    position: relative;
++    transition: background var(--kw-transition);
++}
++
++.kw-icon-btn:hover {
++    background: var(--kw-surface-raised);
++}
++
++.kw-icon-btn svg {
++    width: 22px;
++    height: 22px;
++}
++
++.kw-count {
++    position: absolute;
++    top: 2px;
++    right: 0;
++    min-width: 18px;
++    height: 18px;
++    padding: 0 5px;
++    border-radius: 999px;
++    background: var(--kw-green);
++    color: #fff;
++    font-size: 11px;
++    font-weight: 700;
++    line-height: 18px;
++    text-align: center;
++}
++
++/* ---------- 4. Header ----------------------------------------------------- */
++.kw-header {
++    position: sticky;
++    top: 0;
++    z-index: 100;
++    background: var(--kw-surface);
++    border-bottom: 1px solid var(--kw-border);
++    box-shadow: var(--kw-shadow-sm);
++}
++
++.kw-header__bar {
++    display: flex;
++    align-items: center;
++    gap: 16px;
++    height: var(--kw-header-h);
++}
++
++.kw-logo {
++    display: inline-flex;
++    align-items: center;
++    flex: 0 0 auto;
++}
++
++.kw-logo img {
++    height: 44px;
++    width: auto;
++}
++
++.kw-search {
++    flex: 1 1 auto;
++    display: flex;
++    align-items: stretch;
++    position: relative;
++    max-width: 720px;
++    height: 48px;
++    border: 2px solid var(--kw-blue);
++    border-radius: 999px;
++    background: var(--kw-surface);
++    transition: box-shadow var(--kw-transition);
++}
++
++.kw-search:focus-within {
++    box-shadow: var(--kw-focus);
++}
++
++.kw-search__input {
++    flex: 1 1 auto;
++    min-width: 0;
++    border: 0;
++    background: transparent;
++    padding: 0 16px;
++    font: inherit;
++    color: var(--kw-ink);
++}
++
++.kw-search__input:focus {
++    outline: none;
++}
++
++.kw-search__submit {
++    flex: 0 0 auto;
++    width: 56px;
++    border: 0;
++    border-radius: 0 999px 999px 0;
++    background: var(--kw-blue);
++    color: #fff;
++    cursor: pointer;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    margin: -2px -2px -2px 0;
++    transition: background var(--kw-transition);
++}
++
++.kw-search__submit:hover {
++    background: var(--kw-blue-dark);
++}
++
++.kw-search__submit svg {
++    width: 20px;
++    height: 20px;
++}
++
++.kw-header__actions {
++    display: flex;
++    align-items: center;
++    gap: 4px;
++    margin-left: auto;
++}
++
++.kw-header__link {
++    display: none;
++    padding: .4rem .6rem;
++    color: var(--kw-ink);
++    font-weight: 600;
++    border-radius: var(--kw-radius-sm);
++}
++
++.kw-header__link:hover {
++    background: var(--kw-surface-raised);
++    color: var(--kw-ink);
++    text-decoration: none;
++}
++
++/* Suggestions dropdown */
++.kw-suggest {
++    position: absolute;
++    top: calc(100% + 8px);
++    left: 0;
++    right: 0;
++    margin: 0;
++    padding: 6px 0;
++    list-style: none;
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    border-radius: var(--kw-radius);
++    box-shadow: var(--kw-shadow-lg);
++    display: none;
++    max-height: 360px;
++    overflow-y: auto;
++}
++
++.kw-suggest.is-open {
++    display: block;
++}
++
++.kw-suggest__item a {
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    padding: 9px 16px;
++    color: var(--kw-ink);
++}
++
++.kw-suggest__item a:hover,
++.kw-suggest__item a:focus-visible,
++.kw-suggest__item.is-active a {
++    background: var(--kw-blue-tint);
++    color: var(--kw-ink);
++    text-decoration: none;
++}
++
++.kw-suggest__type {
++    font-size: .75rem;
++    text-transform: uppercase;
++    letter-spacing: .04em;
++    color: var(--kw-ink-subtle);
++    min-width: 62px;
++}
++
++/* ---------- 5. Category navigation --------------------------------------- */
++.kw-nav {
++    background: var(--kw-surface);
++    border-bottom: 1px solid var(--kw-border);
++}
++
++.kw-nav__list {
++    display: flex;
++    gap: 4px;
++    margin: 0;
++    padding: 0;
++    list-style: none;
++    overflow-x: auto;
++    scrollbar-width: none;
++}
++
++.kw-nav__list::-webkit-scrollbar {
++    display: none;
++}
++
++.kw-nav__link {
++    display: block;
++    padding: 12px 14px;
++    color: var(--kw-ink-muted);
++    font-weight: 600;
++    white-space: nowrap;
++    border-bottom: 3px solid transparent;
++}
++
++.kw-nav__link:hover,
++.kw-nav__link[aria-current="page"] {
++    color: var(--kw-blue);
++    border-bottom-color: var(--kw-blue);
++    text-decoration: none;
++}
++
++/* ---------- 6. Hero and section headings ---------------------------------- */
++.kw-hero {
++    margin: 20px 0 8px;
++    padding: 36px 32px;
++    border-radius: var(--kw-radius-lg);
++    background: linear-gradient(120deg, var(--kw-blue-dark) 0%, var(--kw-blue) 55%, var(--kw-green) 100%);
++    color: #fff;
++    box-shadow: var(--kw-shadow);
++}
++
++.kw-hero h1,
++.kw-hero h2 {
++    color: #fff;
++    max-width: 22ch;
++}
++
++.kw-hero p {
++    max-width: 52ch;
++    color: rgba(255, 255, 255, .92);
++}
++
++.kw-section {
++    margin: 28px 0;
++}
++
++.kw-section__head {
++    display: flex;
++    align-items: baseline;
++    justify-content: space-between;
++    gap: 12px;
++    margin-bottom: 14px;
++}
++
++.kw-section__head a {
++    font-weight: 600;
++    white-space: nowrap;
++}
++
++/* Category tiles */
++.kw-tiles {
++    display: grid;
++    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
++    gap: 14px;
++    margin: 0;
++    padding: 0;
++    list-style: none;
++}
++
++.kw-tile a {
++    display: block;
++    border-radius: var(--kw-radius);
++    overflow: hidden;
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    color: var(--kw-ink);
++    transition: box-shadow var(--kw-transition), transform var(--kw-transition);
++}
++
++.kw-tile a:hover {
++    box-shadow: var(--kw-shadow);
++    transform: translateY(-2px);
++    text-decoration: none;
++    color: var(--kw-ink);
++}
++
++.kw-tile__media {
++    aspect-ratio: 4 / 3;
++    background: var(--kw-blue-tint);
++}
++
++.kw-tile__label {
++    padding: 10px 12px;
++    font-weight: 600;
++}
++
++/* ---------- 7. Product cards and grid ------------------------------------- */
++.kw-grid {
++    display: grid;
++    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
++    gap: 20px 16px;
++    margin: 0;
++    padding: 0;
++    list-style: none;
++}
++
++.kw-card {
++    position: relative;
++    display: flex;
++    flex-direction: column;
++    height: 100%;
++    background: var(--kw-surface);
++    border-radius: var(--kw-radius);
++    overflow: hidden;
++    box-shadow: var(--kw-shadow-sm);
++    transition: box-shadow var(--kw-transition), transform var(--kw-transition);
++}
++
++.kw-card:hover {
++    box-shadow: var(--kw-shadow);
++    transform: translateY(-2px);
++}
++
++.kw-card__media {
++    position: relative;
++    aspect-ratio: 1 / 1;
++    background: var(--kw-surface-raised);
++    overflow: hidden;
++}
++
++.kw-card__media img,
++.kw-card__media .kw-thumb {
++    width: 100%;
++    height: 100%;
++    object-fit: cover;
++}
++
++.kw-card__link {
++    display: flex;
++    flex-direction: column;
++    flex: 1 1 auto;
++    padding: 12px 14px 14px;
++    color: var(--kw-ink);
++}
++
++.kw-card__link:hover {
++    color: var(--kw-ink);
++    text-decoration: none;
++}
++
++.kw-card__title {
++    display: -webkit-box;
++    -webkit-line-clamp: 2;
++    -webkit-box-orient: vertical;
++    overflow: hidden;
++    margin: 0 0 4px;
++    font-size: .95rem;
++    font-weight: 500;
++    line-height: 1.35;
++    color: var(--kw-ink);
++    min-height: 2.7em;
++}
++
++.kw-card__shop {
++    font-size: .8rem;
++    color: var(--kw-ink-subtle);
++    margin-bottom: 6px;
++}
++
++.kw-card__rating {
++    display: flex;
++    align-items: center;
++    gap: 4px;
++    font-size: .8rem;
++    color: var(--kw-ink-subtle);
++    margin-bottom: 8px;
++}
++
++.kw-card__price {
++    display: flex;
++    align-items: baseline;
++    flex-wrap: wrap;
++    gap: 6px;
++    margin-top: auto;
++    font-weight: 700;
++    font-size: 1.05rem;
++    color: var(--kw-ink);
++}
++
++.kw-card__price s {
++    font-size: .85rem;
++    font-weight: 400;
++    color: var(--kw-ink-subtle);
++}
++
++.kw-card__price .kw-sale {
++    color: var(--kw-danger);
++}
++
++.kw-card__badges {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 6px;
++    margin-bottom: 8px;
++}
++
++/* Favourite heart on each card */
++.kw-fav {
++    position: absolute;
++    top: 10px;
++    right: 10px;
++    z-index: 2;
++    width: 36px;
++    height: 36px;
++    border: 0;
++    border-radius: 50%;
++    background: rgba(255, 255, 255, .92);
++    color: var(--kw-ink);
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    cursor: pointer;
++    box-shadow: var(--kw-shadow-sm);
++    transition: transform var(--kw-transition), color var(--kw-transition);
++}
++
++.kw-fav:hover {
++    transform: scale(1.08);
++}
++
++.kw-fav svg {
++    width: 20px;
++    height: 20px;
++}
++
++.kw-fav[aria-pressed="true"] {
++    color: var(--kw-danger);
++}
++
++.kw-fav[aria-pressed="true"] svg path {
++    fill: currentColor;
++}
++
++/* Placeholder used until real product photos are uploaded */
++.kw-thumb {
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    width: 100%;
++    height: 100%;
++    font-size: 2rem;
++    font-weight: 700;
++    color: rgba(255, 255, 255, .9);
++    background: linear-gradient(135deg, var(--kw-blue-light), var(--kw-blue));
++}
++
++.kw-thumb--green {
++    background: linear-gradient(135deg, var(--kw-green-light), var(--kw-green));
++}
++
++.kw-thumb--ink {
++    background: linear-gradient(135deg, #5b6b82, var(--kw-ink-muted));
++}
++
++/* ---------- 8. Badges and stars ------------------------------------------- */
++.kw-badge {
++    display: inline-flex;
++    align-items: center;
++    gap: 4px;
++    padding: 3px 8px;
++    border-radius: 999px;
++    font-size: .72rem;
++    font-weight: 700;
++    letter-spacing: .02em;
++    line-height: 1.2;
++    background: var(--kw-surface-raised);
++    color: var(--kw-ink-muted);
++}
++
++.kw-badge--green {
++    background: var(--kw-green-tint);
++    color: var(--kw-green-dark);
++}
++
++.kw-badge--blue {
++    background: var(--kw-blue-tint);
++    color: var(--kw-blue-dark);
++}
++
++.kw-badge--sale {
++    background: var(--kw-danger-tint);
++    color: var(--kw-danger);
++}
++
++.kw-badge--warn {
++    background: var(--kw-warning-tint);
++    color: var(--kw-warning);
++}
++
++.kw-stars {
++    display: inline-flex;
++    gap: 1px;
++    color: var(--kw-star);
++    line-height: 1;
++}
++
++.kw-stars svg {
++    width: 14px;
++    height: 14px;
++}
++
++/* ---------- 9. Layout with filters ---------------------------------------- */
++.kw-browse {
++    display: grid;
++    grid-template-columns: 240px minmax(0, 1fr);
++    gap: 28px;
++    align-items: start;
++    margin: 20px 0 40px;
++}
++
++.kw-browse__toolbar {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    justify-content: space-between;
++    gap: 12px;
++    margin-bottom: 16px;
++}
++
++.kw-results-count {
++    color: var(--kw-ink-subtle);
++    font-size: .9rem;
++}
++
++.kw-select {
++    height: 40px;
++    padding: 0 36px 0 12px;
++    border: 1px solid var(--kw-border-strong);
++    border-radius: var(--kw-radius-sm);
++    background: var(--kw-surface);
++    font: inherit;
++    color: var(--kw-ink);
++}
++
++.kw-filters {
++    position: sticky;
++    top: calc(var(--kw-header-h) + 16px);
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    border-radius: var(--kw-radius);
++    padding: 18px;
++}
++
++.kw-filters__title {
++    font-size: 1rem;
++    margin-bottom: 14px;
++}
++
++.kw-filter-group {
++    padding: 14px 0;
++    border-top: 1px solid var(--kw-border);
++}
++
++.kw-filter-group:first-of-type {
++    border-top: 0;
++    padding-top: 0;
++}
++
++.kw-filter-group legend,
++.kw-filter-group__label {
++    font-weight: 700;
++    margin-bottom: 8px;
++    padding: 0;
++}
++
++.kw-check {
++    display: flex;
++    align-items: center;
++    gap: 8px;
++    padding: 4px 0;
++    cursor: pointer;
++}
++
++.kw-check input {
++    width: 16px;
++    height: 16px;
++    accent-color: var(--kw-green);
++}
++
++.kw-range {
++    display: grid;
++    grid-template-columns: 1fr auto 1fr;
++    gap: 8px;
++    align-items: center;
++}
++
++.kw-input {
++    width: 100%;
++    height: 40px;
++    padding: 0 12px;
++    border: 1px solid var(--kw-border-strong);
++    border-radius: var(--kw-radius-sm);
++    font: inherit;
++    background: var(--kw-surface);
++    color: var(--kw-ink);
++}
++
++.kw-input:focus {
++    outline: none;
++    border-color: var(--kw-blue);
++    box-shadow: var(--kw-focus);
++}
++
++.kw-filters-toggle {
++    display: none;
++}
++
++/* ---------- 10. Shop header ----------------------------------------------- */
++.kw-shop {
++    margin: 20px 0;
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    border-radius: var(--kw-radius-lg);
++    overflow: hidden;
++}
++
++.kw-shop__banner {
++    height: 160px;
++    background: linear-gradient(120deg, var(--kw-blue), var(--kw-green));
++}
++
++.kw-shop__body {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: flex-end;
++    gap: 18px;
++    padding: 0 24px 22px;
++    margin-top: -40px;
++}
++
++.kw-shop__avatar {
++    width: 88px;
++    height: 88px;
++    border-radius: 50%;
++    border: 4px solid var(--kw-surface);
++    background: var(--kw-green);
++    color: #fff;
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    font-size: 2rem;
++    font-weight: 700;
++}
++
++.kw-shop__info {
++    flex: 1 1 260px;
++    padding-bottom: 4px;
++}
++
++.kw-shop__name {
++    font-size: 1.5rem;
++    margin: 0;
++}
++
++.kw-shop__meta {
++    display: flex;
++    flex-wrap: wrap;
++    gap: 12px;
++    color: var(--kw-ink-subtle);
++    font-size: .9rem;
++}
++
++/* ---------- 11. Product page ---------------------------------------------- */
++.kw-product {
++    display: grid;
++    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
++    gap: 36px;
++    margin: 24px 0 40px;
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    border-radius: var(--kw-radius-lg);
++    padding: 24px;
++}
++
++.kw-gallery__main {
++    aspect-ratio: 1 / 1;
++    border-radius: var(--kw-radius);
++    overflow: hidden;
++    background: var(--kw-surface-raised);
++}
++
++.kw-gallery__main img,
++.kw-gallery__main .kw-thumb {
++    width: 100%;
++    height: 100%;
++    object-fit: cover;
++}
++
++.kw-gallery__thumbs {
++    display: grid;
++    grid-template-columns: repeat(5, 1fr);
++    gap: 8px;
++    margin-top: 10px;
++}
++
++.kw-gallery__thumb {
++    padding: 0;
++    border: 2px solid transparent;
++    border-radius: var(--kw-radius-sm);
++    overflow: hidden;
++    aspect-ratio: 1 / 1;
++    cursor: pointer;
++    background: var(--kw-surface-raised);
++}
++
++.kw-gallery__thumb[aria-pressed="true"] {
++    border-color: var(--kw-blue);
++}
++
++.kw-gallery__thumb img,
++.kw-gallery__thumb .kw-thumb {
++    width: 100%;
++    height: 100%;
++    object-fit: cover;
++    font-size: .9rem;
++}
++
++.kw-product__price {
++    font-size: 1.9rem;
++    font-weight: 700;
++    margin: 12px 0 4px;
++}
++
++.kw-product__buy {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    gap: 12px;
++    margin: 18px 0;
++}
++
++.kw-qty {
++    display: inline-flex;
++    align-items: center;
++    border: 1px solid var(--kw-border-strong);
++    border-radius: 999px;
++    overflow: hidden;
++    height: 44px;
++}
++
++.kw-qty button {
++    width: 40px;
++    height: 100%;
++    border: 0;
++    background: transparent;
++    font-size: 1.2rem;
++    cursor: pointer;
++    color: var(--kw-ink);
++}
++
++.kw-qty button:hover {
++    background: var(--kw-surface-raised);
++}
++
++.kw-qty input {
++    width: 48px;
++    height: 100%;
++    border: 0;
++    text-align: center;
++    font: inherit;
++    font-weight: 600;
++    -moz-appearance: textfield;
++}
++
++.kw-qty input::-webkit-outer-spin-button,
++.kw-qty input::-webkit-inner-spin-button {
++    -webkit-appearance: none;
++    margin: 0;
++}
++
++.kw-notice {
++    display: flex;
++    gap: 10px;
++    align-items: flex-start;
++    padding: 12px 14px;
++    border-radius: var(--kw-radius-sm);
++    background: var(--kw-blue-tint);
++    color: var(--kw-blue-darker);
++    font-size: .92rem;
++}
++
++.kw-notice--warn {
++    background: var(--kw-warning-tint);
++    color: var(--kw-warning);
++}
++
++.kw-notice--error {
++    background: var(--kw-danger-tint);
++    color: var(--kw-danger);
++}
++
++/* ---------- 12. Footer ---------------------------------------------------- */
++.kw-footer {
++    margin-top: 48px;
++    background: var(--kw-blue-darker);
++    color: rgba(255, 255, 255, .86);
++    font-size: .92rem;
++}
++
++.kw-footer a {
++    color: rgba(255, 255, 255, .86);
++}
++
++.kw-footer a:hover {
++    color: #fff;
++}
++
++.kw-footer__grid {
++    display: grid;
++    grid-template-columns: 2fr repeat(3, 1fr);
++    gap: 28px;
++    padding: 40px 0 28px;
++}
++
++.kw-footer h2 {
++    color: #fff;
++    font-size: .95rem;
++    margin-bottom: 12px;
++}
++
++.kw-footer ul {
++    list-style: none;
++    margin: 0;
++    padding: 0;
++}
++
++.kw-footer li + li {
++    margin-top: 8px;
++}
++
++.kw-footer__brand img {
++    height: 40px;
++    width: auto;
++    background: #fff;
++    border-radius: var(--kw-radius-sm);
++    padding: 4px 8px;
++    margin-bottom: 12px;
++}
++
++.kw-footer__bottom {
++    display: flex;
++    flex-wrap: wrap;
++    justify-content: space-between;
++    gap: 12px;
++    padding: 18px 0;
++    border-top: 1px solid rgba(255, 255, 255, .14);
++    font-size: .85rem;
++    color: rgba(255, 255, 255, .7);
++}
++
++.kw-footer .kw-btn--outline {
++    background: transparent;
++    border-color: rgba(255, 255, 255, .4);
++    color: #fff;
++}
++
++.kw-footer .kw-btn--outline:hover {
++    border-color: #fff;
++    color: #fff;
++}
++
++/* ---------- 13. Empty states, toasts, misc -------------------------------- */
++.kw-empty {
++    text-align: center;
++    padding: 56px 16px;
++    background: var(--kw-surface);
++    border: 1px dashed var(--kw-border-strong);
++    border-radius: var(--kw-radius-lg);
++}
++
++.kw-empty h2 {
++    font-size: 1.2rem;
++}
++
++.kw-toast {
++    position: fixed;
++    left: 50%;
++    bottom: 24px;
++    transform: translateX(-50%) translateY(20px);
++    background: var(--kw-ink);
++    color: #fff;
++    padding: 12px 18px;
++    border-radius: var(--kw-radius);
++    box-shadow: var(--kw-shadow-lg);
++    opacity: 0;
++    pointer-events: none;
++    transition: opacity var(--kw-transition), transform var(--kw-transition);
++    z-index: 200;
++}
++
++.kw-toast.is-visible {
++    opacity: 1;
++    transform: translateX(-50%) translateY(0);
++}
++
++.kw-skip {
++    position: absolute;
++    left: 12px;
++    top: -60px;
++    z-index: 300;
++    background: var(--kw-blue);
++    color: #fff;
++    padding: 8px 14px;
++    border-radius: var(--kw-radius-sm);
++}
++
++.kw-skip:focus {
++    top: 12px;
++}
++
++/* ---------- 14. Responsive ------------------------------------------------ */
++@media (min-width: 768px) {
++    .kw-header__link {
++        display: inline-flex;
++    }
++    .kw-hero {
++        padding: 52px 48px;
++    }
++    .kw-product {
++        padding: 32px;
++    }
++}
++
++@media (max-width: 1023px) {
++    .kw-browse {
++        grid-template-columns: minmax(0, 1fr);
++    }
++    .kw-filters {
++        position: static;
++        display: none;
++    }
++    .kw-filters.is-open {
++        display: block;
++    }
++    .kw-filters-toggle {
++        display: inline-flex;
++    }
++    .kw-product {
++        grid-template-columns: minmax(0, 1fr);
++    }
++    .kw-footer__grid {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++    }
++}
++
++@media (max-width: 767px) {
++    :root {
++        --kw-header-h: 116px;
++    }
++    .kw-header__bar {
++        flex-wrap: wrap;
++        height: auto;
++        padding: 10px 0;
++        row-gap: 8px;
++    }
++    .kw-logo img {
++        height: 36px;
++    }
++    .kw-search {
++        order: 3;
++        flex: 1 0 100%;
++        max-width: none;
++    }
++    .kw-hero {
++        padding: 28px 22px;
++    }
++    .kw-grid {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++        gap: 14px 10px;
++    }
++    .kw-card__title {
++        font-size: .88rem;
++    }
++    .kw-shop__banner {
++        height: 110px;
++    }
++    .kw-gallery__thumbs {
++        grid-template-columns: repeat(4, 1fr);
++    }
++}
++
++@media (max-width: 479px) {
++    .kw-footer__grid {
++        grid-template-columns: minmax(0, 1fr);
++    }
++}
++
++/* ---------- 15. Reduced motion and high contrast -------------------------- */
++@media (prefers-reduced-motion: reduce) {
++    *,
++    *::before,
++    *::after {
++        transition-duration: 0.01ms !important;
++        animation-duration: 0.01ms !important;
++        scroll-behavior: auto !important;
++    }
++    .kw-card:hover,
++    .kw-tile a:hover {
++        transform: none;
++    }
++}
++
++@media (prefers-contrast: more) {
++    :root {
++        --kw-border: #8a94a6;
++        --kw-border-strong: #4b5563;
++        --kw-ink-subtle: #4b5563;
++    }
++}
++
++/* ==========================================================================
++   16. Navigation menus: Categories (hamburger) and mega menu
++   ========================================================================== */
++
++/* Header nav becomes a positioning context for the mega panels */
++.kw-nav {
++    position: relative;
++}
++
++.kw-nav__inner {
++    display: flex;
++    align-items: stretch;
++    gap: 6px;
++}
++
++/* Trigger buttons (Categories, and the mega menu items) */
++.kw-menu {
++    position: relative;
++    flex: 0 0 auto;
++}
++
++.kw-menu__trigger {
++    display: inline-flex;
++    align-items: center;
++    gap: 8px;
++    height: 100%;
++    min-height: 46px;
++    padding: 0 14px;
++    border: 0;
++    border-bottom: 3px solid transparent;
++    background: transparent;
++    font: inherit;
++    font-weight: 600;
++    color: var(--kw-ink);
++    cursor: pointer;
++    white-space: nowrap;
++    border-radius: 0;
++    transition: color var(--kw-transition), border-color var(--kw-transition);
++}
++
++.kw-menu__trigger:hover {
++    color: var(--kw-blue);
++}
++
++.kw-menu__trigger[aria-expanded="true"] {
++    color: var(--kw-blue);
++    border-bottom-color: var(--kw-blue);
++}
++
++.kw-menu__trigger svg {
++    width: 18px;
++    height: 18px;
++    flex: 0 0 auto;
++}
++
++.kw-menu__chevron {
++    width: 12px !important;
++    height: 12px !important;
++    transition: transform var(--kw-transition);
++}
++
++.kw-menu__trigger[aria-expanded="true"] .kw-menu__chevron {
++    transform: rotate(180deg);
++}
++
++/* Categories panel: a list anchored under the hamburger button, with a pointer */
++.kw-categories {
++    position: absolute;
++    top: calc(100% + 14px);
++    left: -4px;
++    z-index: 160;
++    width: 320px;
++    max-height: min(70vh, 520px);
++    overflow-y: auto;
++    background: var(--kw-surface);
++    border-radius: var(--kw-radius);
++    box-shadow: var(--kw-shadow-lg);
++    border: 1px solid var(--kw-border);
++    padding: 8px 0;
++}
++
++.kw-categories[hidden] {
++    display: none;
++}
++
++.kw-categories::before {
++    content: "";
++    position: absolute;
++    top: -8px;
++    left: 26px;
++    width: 14px;
++    height: 14px;
++    background: var(--kw-surface);
++    border-left: 1px solid var(--kw-border);
++    border-top: 1px solid var(--kw-border);
++    transform: rotate(45deg);
++}
++
++.kw-categories__list {
++    list-style: none;
++    margin: 0;
++    padding: 0;
++}
++
++.kw-categories__link {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 12px;
++    padding: 12px 20px;
++    color: var(--kw-ink);
++    font-size: 1rem;
++}
++
++.kw-categories__link:hover,
++.kw-categories__link:focus-visible {
++    background: var(--kw-blue-tint);
++    color: var(--kw-ink);
++    text-decoration: none;
++}
++
++.kw-categories__link svg {
++    width: 14px;
++    height: 14px;
++    color: var(--kw-ink-subtle);
++    flex: 0 0 auto;
++}
++
++.kw-categories__all {
++    display: block;
++    margin: 6px 12px 4px;
++    padding: 10px 12px;
++    border-top: 1px solid var(--kw-border);
++    font-weight: 600;
++    color: var(--kw-blue);
++    text-align: left;
++}
++
++/* Mega panels: full-width under the nav bar */
++.kw-mega {
++    position: absolute;
++    top: 100%;
++    left: 0;
++    right: 0;
++    z-index: 150;
++    background: var(--kw-surface);
++    border-top: 1px solid var(--kw-border);
++    border-bottom: 1px solid var(--kw-border);
++    box-shadow: var(--kw-shadow-lg);
++}
++
++.kw-mega[hidden] {
++    display: none;
++}
++
++.kw-mega__inner {
++    display: grid;
++    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(260px, 1.15fr);
++    gap: 32px;
++    padding-block: 28px 32px;
++}
++
++.kw-mega h3 {
++    font-size: .8rem;
++    text-transform: uppercase;
++    letter-spacing: .06em;
++    color: var(--kw-ink-subtle);
++    margin-bottom: 12px;
++}
++
++.kw-mega ul {
++    list-style: none;
++    margin: 0;
++    padding: 0;
++}
++
++.kw-mega li + li {
++    margin-top: 2px;
++}
++
++.kw-mega__link {
++    display: block;
++    padding: 7px 0;
++    color: var(--kw-ink);
++    font-size: .96rem;
++}
++
++.kw-mega__link:hover {
++    color: var(--kw-blue);
++    text-decoration: underline;
++}
++
++.kw-mega__link--strong {
++    font-weight: 600;
++}
++
++/* Promo card on the right of each mega panel */
++.kw-promo {
++    display: flex;
++    flex-direction: column;
++    justify-content: flex-end;
++    min-height: 220px;
++    padding: 22px;
++    border-radius: var(--kw-radius);
++    color: #fff;
++    background: linear-gradient(135deg, var(--kw-blue-dark), var(--kw-blue) 55%, var(--kw-green));
++}
++
++.kw-promo--green {
++    background: linear-gradient(135deg, var(--kw-green-dark), var(--kw-green));
++}
++
++.kw-promo__eyebrow {
++    font-size: .75rem;
++    font-weight: 700;
++    letter-spacing: .08em;
++    text-transform: uppercase;
++    opacity: .9;
++}
++
++.kw-promo h4 {
++    color: #fff;
++    font-size: 1.35rem;
++    margin: 6px 0 14px;
++    max-width: 18ch;
++}
++
++.kw-promo .kw-btn--outline {
++    align-self: flex-start;
++    background: rgba(255, 255, 255, .12);
++    border-color: rgba(255, 255, 255, .6);
++    color: #fff;
++}
++
++.kw-promo .kw-btn--outline:hover {
++    background: #fff;
++    color: var(--kw-blue-dark);
++    border-color: #fff;
++}
++
++/* Keep the bar readable when it wraps to a second row on narrow screens */
++@media (max-width: 1023px) {
++    .kw-mega__inner {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++        gap: 20px;
++        padding-block: 20px 24px;
++    }
++    .kw-promo {
++        grid-column: 1 / -1;
++        min-height: 160px;
++    }
++}
++
++@media (max-width: 767px) {
++    .kw-nav__inner {
++        gap: 0;
++    }
++    .kw-categories {
++        position: fixed;
++        top: var(--kw-header-h);
++        left: 0;
++        right: 0;
++        width: auto;
++        max-height: calc(100vh - var(--kw-header-h));
++        border-radius: 0;
++        border-left: 0;
++        border-right: 0;
++    }
++    .kw-categories::before {
++        display: none;
++    }
++    .kw-mega {
++        position: fixed;
++        top: var(--kw-header-h);
++        bottom: 0;
++        overflow-y: auto;
++        border-radius: 0;
++    }
++    .kw-mega__inner {
++        grid-template-columns: minmax(0, 1fr);
++        gap: 12px;
++        padding-block: 16px 24px;
++    }
++    .kw-menu__trigger {
++        padding: 0 10px;
++        font-size: .92rem;
++    }
++    .kw-menu__trigger span.kw-hide-sm {
++        display: none;
++    }
++}
++
++@media (prefers-reduced-motion: reduce) {
++    .kw-menu__chevron {
++        transition: none;
++    }
++}
++
++/* ==========================================================================
++   17. Home page sections
++   ========================================================================== */
++
++.kw-home {
++    padding-bottom: 8px;
++}
++
++.kw-home .kw-section {
++    margin: 36px 0;
++}
++
++/* Deal countdown */
++.kw-countdown {
++    display: inline-flex;
++    align-items: center;
++    gap: 6px;
++    font-size: .8rem;
++    font-weight: 700;
++    color: var(--kw-danger);
++    font-variant-numeric: tabular-nums;
++}
++
++.kw-countdown::before {
++    content: "";
++    width: 8px;
++    height: 8px;
++    border-radius: 50%;
++    background: var(--kw-danger);
++}
++
++/* Seasonal banner tiles */
++.kw-seasons {
++    display: grid;
++    grid-template-columns: repeat(3, minmax(0, 1fr));
++    gap: 16px;
++    margin: 0;
++    padding: 0;
++    list-style: none;
++}
++
++.kw-season a {
++    display: flex;
++    flex-direction: column;
++    justify-content: flex-end;
++    min-height: 200px;
++    padding: 20px;
++    border-radius: var(--kw-radius-lg);
++    color: #fff;
++    background: linear-gradient(135deg, var(--kw-blue-dark), var(--kw-blue));
++    box-shadow: var(--kw-shadow-sm);
++    transition: transform var(--kw-transition), box-shadow var(--kw-transition);
++}
++
++.kw-season a:hover {
++    transform: translateY(-2px);
++    box-shadow: var(--kw-shadow);
++    color: #fff;
++    text-decoration: none;
++}
++
++.kw-season--green a {
++    background: linear-gradient(135deg, var(--kw-green-dark), var(--kw-green));
++}
++
++.kw-season--ink a {
++    background: linear-gradient(135deg, #3d4a5c, var(--kw-ink));
++}
++
++.kw-season__eyebrow {
++    font-size: .75rem;
++    font-weight: 700;
++    letter-spacing: .08em;
++    text-transform: uppercase;
++    opacity: .9;
++}
++
++.kw-season h3 {
++    color: #fff;
++    font-size: 1.25rem;
++    margin: 4px 0 0;
++}
++
++/* Top shop cards */
++.kw-shops {
++    display: grid;
++    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
++    gap: 16px;
++    margin: 0;
++    padding: 0;
++    list-style: none;
++}
++
++.kw-shopcard {
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    border-radius: var(--kw-radius);
++    overflow: hidden;
++    box-shadow: var(--kw-shadow-sm);
++    height: 100%;
++}
++
++.kw-shopcard__banner {
++    height: 72px;
++    background: linear-gradient(120deg, var(--kw-blue-light), var(--kw-blue));
++}
++
++.kw-shopcard__body {
++    padding: 0 16px 16px;
++    margin-top: -22px;
++}
++
++.kw-shopcard__avatar {
++    width: 44px;
++    height: 44px;
++    border-radius: 50%;
++    border: 3px solid var(--kw-surface);
++    background: var(--kw-green);
++    color: #fff;
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    font-weight: 700;
++    margin-bottom: 8px;
++}
++
++.kw-shopcard__name {
++    font-weight: 700;
++    color: var(--kw-ink);
++}
++
++.kw-shopcard__meta {
++    font-size: .82rem;
++    color: var(--kw-ink-subtle);
++    margin-top: 2px;
++}
++
++.kw-shopcard:hover {
++    box-shadow: var(--kw-shadow);
++}
++
++/* Gift guide tiles reuse .kw-tiles; trust strip reuses .kw-trust below */
++.kw-trust {
++    display: grid;
++    grid-template-columns: repeat(4, minmax(0, 1fr));
++    gap: 16px;
++    margin: 0;
++    padding: 20px;
++    list-style: none;
++    background: var(--kw-surface);
++    border: 1px solid var(--kw-border);
++    border-radius: var(--kw-radius-lg);
++}
++
++.kw-trust li {
++    display: flex;
++    gap: 12px;
++    align-items: flex-start;
++}
++
++.kw-trust__icon {
++    flex: 0 0 auto;
++    width: 36px;
++    height: 36px;
++    border-radius: 50%;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    background: var(--kw-green-tint);
++    color: var(--kw-green-dark);
++    font-weight: 700;
++}
++
++.kw-trust strong {
++    display: block;
++    font-size: .95rem;
++}
++
++.kw-trust span.kw-muted {
++    font-size: .85rem;
++}
++
++/* "See more" for the lower sections on phones */
++.kw-more-toggle {
++    display: none;
++    margin: 16px auto 0;
++}
++
++@media (max-width: 1023px) {
++    .kw-trust {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++    }
++    .kw-seasons {
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++    }
++}
++
++@media (max-width: 767px) {
++    .kw-home .kw-section--more {
++        display: none;
++    }
++    .kw-home.is-expanded .kw-section--more {
++        display: block;
++    }
++    .kw-more-toggle {
++        display: inline-flex;
++    }
++    .kw-seasons {
++        grid-template-columns: minmax(0, 1fr);
++    }
++    .kw-trust {
++        grid-template-columns: minmax(0, 1fr);
++    }
++}
++
++/* ==========================================================================
++   18. Navigation panels on phones: anchor below the nav bar, not at a fixed
++       offset from the top (the header height varies with the wrapped rows).
++   ========================================================================== */
++@media (max-width: 767px) {
++    .kw-menu {
++        position: static;
++    }
++    .kw-categories {
++        position: absolute;
++        top: 100%;
++        left: 0;
++        right: 0;
++        width: auto;
++        max-height: 70vh;
++        border-radius: 0 0 var(--kw-radius) var(--kw-radius);
++        border-left: 0;
++        border-right: 0;
++        box-shadow: var(--kw-shadow-lg);
++    }
++    .kw-mega {
++        position: absolute;
++        top: 100%;
++        bottom: auto;
++        max-height: 75vh;
++        overflow-y: auto;
++        border-radius: 0;
++    }
++}
++
++/* ==========================================================================
++   19. "Picked for you": toolbar with category and sort dropdowns, quick chips
++   ========================================================================== */
++.kw-pick-toolbar {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    justify-content: space-between;
++    gap: 12px;
++    margin-bottom: 14px;
++}
++
++.kw-pick-toolbar__selects {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    gap: 10px;
++    margin-left: auto;
++}
++
++.kw-pick-toolbar .kw-select {
++    min-width: 170px;
++}
++
++.kw-chips {
++    display: flex;
++    flex-wrap: nowrap;
++    gap: 8px;
++    margin: 0 0 16px;
++    padding: 0;
++    list-style: none;
++    overflow-x: auto;
++    scrollbar-width: none;
++}
++
++.kw-chips::-webkit-scrollbar {
++    display: none;
++}
++
++.kw-chip {
++    display: inline-flex;
++    align-items: center;
++    flex: 0 0 auto;
++    padding: 7px 14px;
++    border: 1px solid var(--kw-border-strong);
++    border-radius: 999px;
++    background: var(--kw-surface);
++    color: var(--kw-ink);
++    font-size: .9rem;
++    font-weight: 600;
++    white-space: nowrap;
++}
++
++.kw-chip:hover {
++    border-color: var(--kw-blue);
++    color: var(--kw-blue);
++    text-decoration: none;
++}
++
++.kw-chip[aria-current="true"] {
++    background: var(--kw-blue-tint);
++    border-color: var(--kw-blue);
++    color: var(--kw-blue-dark);
++}
++
++@media (max-width: 767px) {
++    .kw-pick-toolbar__selects {
++        width: 100%;
++        margin-left: 0;
++    }
++    .kw-pick-toolbar .kw-select {
++        flex: 1 1 140px;
++        min-width: 0;
++    }
++}
++
++/* ==========================================================================
++   20. Hero carousel: four slots (platform, campaign, shop spotlight, category spotlight)
++   ========================================================================== */
++.kw-carousel {
++    position: relative;
++    margin: 20px 0 8px;
++    height: clamp(300px, 36vw, 380px);
++    border-radius: var(--kw-radius-lg);
++    overflow: hidden;
++    background: var(--kw-blue-dark);
++    color: #fff;
++    box-shadow: var(--kw-shadow);
++}
++
++.kw-slide {
++    position: absolute;
++    inset: 0;
++    display: flex;
++    flex-direction: column;
++    justify-content: flex-end;
++    padding: 0 56px 72px;
++    background: linear-gradient(120deg, var(--kw-blue-dark) 0%, var(--kw-blue) 55%, var(--kw-green) 100%);
++    opacity: 0;
++    visibility: hidden;
++    transition: opacity .6s ease, visibility .6s ease;
++}
++
++.kw-slide--campaign { background: linear-gradient(120deg, #1a3360, #315d9e 50%, #6cc95a); }
++.kw-slide--shop     { background: linear-gradient(120deg, #24447a, #4f7fc0 60%, #3baf29); }
++.kw-slide--category { background: linear-gradient(120deg, #2f8f20, #3baf29 55%, #1a3360); }
++
++.kw-slide.is-active {
++    opacity: 1;
++    visibility: visible;
++}
++
++.kw-slide__label {
++    display: inline-flex;
++    align-self: flex-start;
++    padding: 4px 10px;
++    margin-bottom: 12px;
++    border-radius: 999px;
++    background: rgba(255, 255, 255, .18);
++    font-size: .72rem;
++    font-weight: 700;
++    letter-spacing: .08em;
++    text-transform: uppercase;
++}
++
++.kw-slide h1,
++.kw-slide h2 {
++    color: #fff;
++    font-size: clamp(1.6rem, 3.4vw, 2.6rem);
++    max-width: 20ch;
++    margin: 0 0 10px;
++}
++
++.kw-slide p {
++    max-width: 50ch;
++    color: rgba(255, 255, 255, .92);
++    margin: 0 0 18px;
++}
++
++.kw-slide__shop {
++    display: flex;
++    align-items: center;
++    gap: 12px;
++    margin-bottom: 18px;
++}
++
++.kw-slide__avatar {
++    width: 52px;
++    height: 52px;
++    border-radius: 50%;
++    background: #fff;
++    color: var(--kw-blue-dark);
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    font-weight: 700;
++    font-size: 1.2rem;
++    flex: 0 0 auto;
++}
++
++.kw-carousel .kw-btn--primary {
++    align-self: flex-start;
++}
++
++.kw-carousel .kw-btn--outline {
++    background: rgba(255, 255, 255, .14);
++    border-color: rgba(255, 255, 255, .6);
++    color: #fff;
++}
++
++.kw-carousel .kw-btn--outline:hover {
++    background: #fff;
++    color: var(--kw-blue-dark);
++    border-color: #fff;
++}
++
++/* Controls: bottom row with dots on the left and pause/arrows on the right */
++.kw-carousel__controls {
++    position: absolute;
++    left: 56px;
++    right: 56px;
++    bottom: 22px;
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 12px;
++    z-index: 2;
++}
++
++.kw-dots {
++    display: flex;
++    gap: 8px;
++    margin: 0;
++    padding: 0;
++    list-style: none;
++}
++
++.kw-dot {
++    width: 28px;
++    height: 6px;
++    padding: 0;
++    border: 0;
++    border-radius: 999px;
++    background: rgba(255, 255, 255, .45);
++    cursor: pointer;
++    transition: background var(--kw-transition), width var(--kw-transition);
++}
++
++.kw-dot[aria-current="true"] {
++    background: #fff;
++    width: 44px;
++}
++
++.kw-carousel__buttons {
++    display: flex;
++    gap: 8px;
++}
++
++.kw-carousel__btn {
++    width: 40px;
++    height: 40px;
++    border-radius: 50%;
++    border: 1px solid rgba(255, 255, 255, .6);
++    background: rgba(255, 255, 255, .12);
++    color: #fff;
++    cursor: pointer;
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++}
++
++.kw-carousel__btn:hover {
++    background: #fff;
++    color: var(--kw-blue-dark);
++}
++
++.kw-carousel__btn svg {
++    width: 18px;
++    height: 18px;
++}
++
++.kw-carousel__pause[aria-pressed="true"] svg .kw-pause-bars {
++    display: none;
++}
++
++.kw-carousel__pause svg .kw-play-tri {
++    display: none;
++}
++
++.kw-carousel__pause[aria-pressed="true"] svg .kw-play-tri {
++    display: inline;
++}
++
++/* Phones: the banner is shorter, and the side arrows give way to swipe-free dots and pause */
++@media (max-width: 767px) {
++    .kw-carousel {
++        height: 320px;
++    }
++    .kw-slide {
++        padding: 0 22px 70px;
++        justify-content: flex-end;
++    }
++    .kw-slide h1,
++    .kw-slide h2 {
++        font-size: 1.55rem;
++    }
++    .kw-carousel__controls {
++        left: 22px;
++        right: 22px;
++        bottom: 18px;
++    }
++    .kw-carousel__btn--arrow {
++        display: none;
++    }
++}
++
++@media (prefers-reduced-motion: reduce) {
++    .kw-slide,
++    .kw-dot {
++        transition: none;
++    }
++}
+diff --git a/wwwroot/js/kwikby.js b/wwwroot/js/kwikby.js
+new file mode 100644
+index 0000000..e5bd9af
+--- /dev/null
++++ b/wwwroot/js/kwikby.js
+@@ -0,0 +1,631 @@
++/* ==========================================================================
++   kwikby.js: progressive enhancement for the Kwikby storefront.
++
++   The site works without JavaScript (forms submit, links navigate). This file
++   adds: search suggestions, favourite toggles, the product gallery, quantity
++   steppers, the mobile filter drawer, and a small toast for feedback.
++
++   Hooks are data attributes, so Razor markup stays free of inline script:
++     [data-kw-suggest]          search input; suggestions load from data-url
++     [data-kw-fav]              favourite button; data-url (optional) saves it
++     [data-kw-thumb]            gallery thumbnail; data-src is the full image
++     [data-kw-qty]              quantity wrapper with [data-kw-dec] and [data-kw-inc]
++     [data-kw-toggle="id"]      opens/closes the element with that id
++     [data-kw-autosubmit]       a <select> that submits its form on change
++     [data-kw-menu-trigger]     button whose aria-controls names a menu panel (Categories, mega menu)
++     [data-kw-countdown]        element with data-kw-countdown="ISO end time"; shows the time left
++     [data-kw-more]             button whose aria-controls names the home page; toggles the lower sections on phones
++     [data-kw-carousel]         hero banner; slides carry data-kw-slide, dots data-kw-dot, and controls data-kw-prev/next/pause
++   ========================================================================== */
++(function () {
++    "use strict";
++
++    var SUGGEST_DELAY_MS = 220;
++    var MIN_QUERY_LENGTH = 2;
++
++    /* ---------- helpers ------------------------------------------------- */
++
++    function $(selector, root) {
++        return (root || document).querySelector(selector);
++    }
++
++    function $$(selector, root) {
++        return Array.prototype.slice.call((root || document).querySelectorAll(selector));
++    }
++
++    function getAntiforgeryToken() {
++        var field = document.querySelector('input[name="__RequestVerificationToken"]');
++        return field ? field.value : "";
++    }
++
++    /** Shows a short message at the bottom of the screen. */
++    function toast(message) {
++        var el = $("#kw-toast");
++        if (!el) {
++            el = document.createElement("div");
++            el.id = "kw-toast";
++            el.className = "kw-toast";
++            el.setAttribute("role", "status");
++            el.setAttribute("aria-live", "polite");
++            document.body.appendChild(el);
++        }
++        el.textContent = message;
++        el.classList.add("is-visible");
++        clearTimeout(el._hideTimer);
++        el._hideTimer = setTimeout(function () {
++            el.classList.remove("is-visible");
++        }, 2400);
++    }
++
++    /** Sends a JSON POST with the anti-forgery token. Resolves to the parsed response or null. */
++    function postJson(url, body) {
++        return fetch(url, {
++            method: "POST",
++            credentials: "same-origin",
++            headers: {
++                "Content-Type": "application/json",
++                "RequestVerificationToken": getAntiforgeryToken()
++            },
++            body: JSON.stringify(body || {})
++        }).then(function (res) {
++            if (!res.ok) {
++                throw new Error("HTTP " + res.status);
++            }
++            return res.headers.get("content-type") && res.headers.get("content-type").indexOf("json") > -1
++                ? res.json()
++                : null;
++        });
++    }
++
++    /* ---------- search suggestions -------------------------------------- */
++
++    /**
++     * Expects the suggest endpoint to return a JSON array of
++     * { type: "Product" | "Shop" | "Category", name: string, url: string }.
++     * Check this against the existing /Catalog/Suggest response and adjust if needed.
++     */
++    function initSuggest(input) {
++        var list = document.getElementById(input.getAttribute("aria-controls") || "");
++        var endpoint = input.getAttribute("data-url");
++        if (!list || !endpoint) {
++            return;
++        }
++
++        var timer = null;
++        var controller = null;
++        var activeIndex = -1;
++
++        function close() {
++            list.classList.remove("is-open");
++            input.setAttribute("aria-expanded", "false");
++            activeIndex = -1;
++        }
++
++        function items() {
++            return $$("li[role='option']", list);
++        }
++
++        function setActive(index) {
++            var all = items();
++            all.forEach(function (li) {
++                li.classList.remove("is-active");
++                li.setAttribute("aria-selected", "false");
++            });
++            if (index < 0 || index >= all.length) {
++                activeIndex = -1;
++                return;
++            }
++            activeIndex = index;
++            all[index].classList.add("is-active");
++            all[index].setAttribute("aria-selected", "true");
++        }
++
++        /** Builds one suggestion row using text nodes only, so names cannot inject markup. */
++        function render(results) {
++            list.textContent = "";
++            if (!results || results.length === 0) {
++                close();
++                return;
++            }
++            results.slice(0, 8).forEach(function (r) {
++                var li = document.createElement("li");
++                li.className = "kw-suggest__item";
++                li.setAttribute("role", "option");
++                li.setAttribute("aria-selected", "false");
++
++                var a = document.createElement("a");
++                a.href = r.url || "#";
++
++                var type = document.createElement("span");
++                type.className = "kw-suggest__type";
++                type.textContent = r.type || "";
++
++                var name = document.createElement("span");
++                name.textContent = r.name || "";
++
++                a.appendChild(type);
++                a.appendChild(name);
++                li.appendChild(a);
++                list.appendChild(li);
++            });
++            list.classList.add("is-open");
++            input.setAttribute("aria-expanded", "true");
++        }
++
++        function fetchSuggestions(query) {
++            if (controller) {
++                controller.abort();
++            }
++            controller = typeof AbortController !== "undefined" ? new AbortController() : null;
++            var url = endpoint + (endpoint.indexOf("?") > -1 ? "&" : "?") + "q=" + encodeURIComponent(query);
++            fetch(url, {
++                credentials: "same-origin",
++                headers: { "Accept": "application/json" },
++                signal: controller ? controller.signal : undefined
++            })
++                .then(function (res) { return res.ok ? res.json() : []; })
++                .then(render)
++                .catch(function (err) {
++                    if (err && err.name !== "AbortError") {
++                        close();
++                    }
++                });
++        }
++
++        input.addEventListener("input", function () {
++            var query = input.value.trim();
++            clearTimeout(timer);
++            if (query.length < MIN_QUERY_LENGTH) {
++                close();
++                return;
++            }
++            timer = setTimeout(function () { fetchSuggestions(query); }, SUGGEST_DELAY_MS);
++        });
++
++        input.addEventListener("keydown", function (e) {
++            if (!list.classList.contains("is-open")) {
++                return;
++            }
++            if (e.key === "ArrowDown") {
++                e.preventDefault();
++                setActive(Math.min(activeIndex + 1, items().length - 1));
++            } else if (e.key === "ArrowUp") {
++                e.preventDefault();
++                setActive(Math.max(activeIndex - 1, 0));
++            } else if (e.key === "Enter" && activeIndex > -1) {
++                e.preventDefault();
++                var link = $("a", items()[activeIndex]);
++                if (link) {
++                    window.location.href = link.href;
++                }
++            } else if (e.key === "Escape") {
++                close();
++            }
++        });
++
++        document.addEventListener("click", function (e) {
++            if (!input.contains(e.target) && !list.contains(e.target)) {
++                close();
++            }
++        });
++    }
++
++    /* ---------- favourites ---------------------------------------------- */
++
++    function initFavourites(button) {
++        button.addEventListener("click", function (e) {
++            e.preventDefault();
++            e.stopPropagation();
++
++            var pressed = button.getAttribute("aria-pressed") === "true";
++            var next = !pressed;
++            button.setAttribute("aria-pressed", String(next));
++            button.setAttribute("aria-label", next ? "Remove from favourites" : "Add to favourites");
++
++            var url = button.getAttribute("data-url");
++            if (!url) {
++                toast(next ? "Saved to favourites" : "Removed from favourites");
++                return;
++            }
++
++            postJson(url, { favourite: next })
++                .then(function () {
++                    toast(next ? "Saved to favourites" : "Removed from favourites");
++                })
++                .catch(function () {
++                    // Roll back the visual state if the server did not accept the change.
++                    button.setAttribute("aria-pressed", String(pressed));
++                    button.setAttribute("aria-label", pressed ? "Remove from favourites" : "Add to favourites");
++                    toast("Could not update favourites. Please sign in and try again.");
++                });
++        });
++    }
++
++    /* ---------- product gallery ----------------------------------------- */
++
++    function initGallery(thumb) {
++        thumb.addEventListener("click", function () {
++            var main = document.querySelector("[data-kw-main]");
++            var src = thumb.getAttribute("data-src");
++            var alt = thumb.getAttribute("data-alt") || "";
++            if (!main || !src) {
++                return;
++            }
++            var img = main.querySelector("img");
++            if (img) {
++                img.src = src;
++                img.alt = alt;
++            }
++            $$("[data-kw-thumb]").forEach(function (t) {
++                t.setAttribute("aria-pressed", t === thumb ? "true" : "false");
++            });
++        });
++    }
++
++    /* ---------- quantity stepper ---------------------------------------- */
++
++    function initQuantity(wrapper) {
++        var input = $("input", wrapper);
++        var dec = $("[data-kw-dec]", wrapper);
++        var inc = $("[data-kw-inc]", wrapper);
++        if (!input) {
++            return;
++        }
++
++        var min = parseInt(input.getAttribute("min") || "1", 10);
++        var max = parseInt(input.getAttribute("max") || "99", 10);
++
++        function clamp(value) {
++            if (isNaN(value)) {
++                return min;
++            }
++            return Math.max(min, Math.min(max, value));
++        }
++
++        function set(value) {
++            input.value = String(clamp(value));
++            input.dispatchEvent(new Event("change", { bubbles: true }));
++        }
++
++        if (dec) {
++            dec.addEventListener("click", function () { set(parseInt(input.value, 10) - 1); });
++        }
++        if (inc) {
++            inc.addEventListener("click", function () { set(parseInt(input.value, 10) + 1); });
++        }
++        input.addEventListener("change", function () { set(parseInt(input.value, 10)); });
++    }
++
++    /* ---------- mobile filter drawer and generic toggles ---------------- */
++
++    function initToggle(button) {
++        var targetId = button.getAttribute("data-kw-toggle");
++        var target = document.getElementById(targetId);
++        if (!target) {
++            return;
++        }
++        button.setAttribute("aria-controls", targetId);
++        button.setAttribute("aria-expanded", "false");
++
++        button.addEventListener("click", function () {
++            var open = !target.classList.contains("is-open");
++            target.classList.toggle("is-open", open);
++            button.setAttribute("aria-expanded", String(open));
++        });
++    }
++
++    /* ---------- sort and filter forms ----------------------------------- */
++
++    function initAutoSubmit(select) {
++        select.addEventListener("change", function () {
++            if (select.form) {
++                select.form.submit();
++            }
++        });
++    }
++
++    /* ---------- navigation menus (Categories and mega menu) ------------- */
++
++    /**
++     * Each trigger has aria-controls pointing at its panel. Click toggles it.
++     * On mouse devices, hovering the trigger or panel also opens it, and leaving
++     * both closes it after a short delay. Only one menu is open at a time.
++     */
++    var CLOSE_DELAY_MS = 180;
++
++    function initMenus() {
++        var triggers = $$("[data-kw-menu-trigger]");
++        if (!triggers.length) {
++            return;
++        }
++
++        var hoverCapable = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
++
++        function panelOf(trigger) {
++            return document.getElementById(trigger.getAttribute("aria-controls") || "");
++        }
++
++        function isOpen(trigger) {
++            return trigger.getAttribute("aria-expanded") === "true";
++        }
++
++        function open(trigger) {
++            triggers.forEach(function (t) {
++                if (t !== trigger) {
++                    close(t, false);
++                }
++            });
++            var panel = panelOf(trigger);
++            if (!panel) {
++                return;
++            }
++            clearTimeout(trigger._closeTimer);
++            panel.hidden = false;
++            trigger.setAttribute("aria-expanded", "true");
++        }
++
++        function close(trigger, restoreFocus) {
++            var panel = panelOf(trigger);
++            clearTimeout(trigger._closeTimer);
++            if (panel) {
++                panel.hidden = true;
++            }
++            trigger.setAttribute("aria-expanded", "false");
++            if (restoreFocus) {
++                trigger.focus();
++            }
++        }
++
++        function scheduleClose(trigger) {
++            clearTimeout(trigger._closeTimer);
++            trigger._closeTimer = setTimeout(function () {
++                if (!panelOf(trigger) || !isOpen(trigger)) {
++                    return;
++                }
++                close(trigger, false);
++            }, CLOSE_DELAY_MS);
++        }
++
++        triggers.forEach(function (trigger) {
++            var panel = panelOf(trigger);
++            if (!panel) {
++                return;
++            }
++            panel.hidden = true;
++            trigger.setAttribute("aria-expanded", "false");
++
++            trigger.addEventListener("click", function (e) {
++                e.preventDefault();
++                // A hover that already opened this menu should not be undone by the click that follows it.
++                if (trigger._hoverOpened && isOpen(trigger)) {
++                    trigger._hoverOpened = false;
++                    return;
++                }
++                if (isOpen(trigger)) {
++                    close(trigger, false);
++                } else {
++                    open(trigger);
++                }
++            });
++
++            if (hoverCapable) {
++                trigger.addEventListener("mouseenter", function () {
++                    if (!isOpen(trigger)) {
++                        open(trigger);
++                        trigger._hoverOpened = true;
++                    }
++                });
++                trigger.addEventListener("mouseleave", function () { trigger._hoverOpened = false; scheduleClose(trigger); });
++                panel.addEventListener("mouseenter", function () { clearTimeout(trigger._closeTimer); });
++                panel.addEventListener("mouseleave", function () { scheduleClose(trigger); });
++            }
++
++            trigger.addEventListener("keydown", function (e) {
++                if (e.key === "ArrowDown" && isOpen(trigger)) {
++                    var first = $("a", panel);
++                    if (first) {
++                        e.preventDefault();
++                        first.focus();
++                    }
++                }
++            });
++
++            panel.addEventListener("keydown", function (e) {
++                if (e.key === "Escape") {
++                    close(trigger, true);
++                }
++            });
++        });
++
++        document.addEventListener("click", function (e) {
++            triggers.forEach(function (trigger) {
++                var panel = panelOf(trigger);
++                if (isOpen(trigger) && panel && !panel.contains(e.target) && !trigger.contains(e.target)) {
++                    close(trigger, false);
++                }
++            });
++        });
++
++        document.addEventListener("keydown", function (e) {
++            if (e.key !== "Escape") {
++                return;
++            }
++            triggers.forEach(function (trigger) {
++                if (isOpen(trigger)) {
++                    close(trigger, true);
++                }
++            });
++        });
++    }
++
++    /* ---------- deal countdowns and "See more" on home ------------------- */
++
++    function formatRemaining(ms) {
++        if (ms <= 0) {
++            return "Deal ended";
++        }
++        var total = Math.floor(ms / 1000);
++        var days = Math.floor(total / 86400);
++        var hours = Math.floor((total % 86400) / 3600);
++        var mins = Math.floor((total % 3600) / 60);
++        var secs = total % 60;
++        var pad = function (n) { return (n < 10 ? "0" : "") + n; };
++        var clock = pad(hours) + ":" + pad(mins) + ":" + pad(secs);
++        return days > 0 ? "Ends in " + days + "d " + clock : "Ends in " + clock;
++    }
++
++    function initCountdown(el) {
++        var end = Date.parse(el.getAttribute("data-kw-countdown"));
++        if (isNaN(end)) {
++            return;
++        }
++        function tick() {
++            var remaining = end - Date.now();
++            el.textContent = formatRemaining(remaining);
++            if (remaining <= 0) {
++                clearInterval(el._kwTimer);
++            }
++        }
++        tick();
++        el._kwTimer = setInterval(tick, 1000);
++    }
++
++    function initMore(button) {
++        var root = document.getElementById(button.getAttribute("aria-controls") || "");
++        if (!root) {
++            return;
++        }
++        button.addEventListener("click", function () {
++            var open = !root.classList.contains("is-expanded");
++            root.classList.toggle("is-expanded", open);
++            button.setAttribute("aria-expanded", String(open));
++            button.textContent = open ? "Show fewer sections" : "See more sections";
++        });
++    }
++
++    /* ---------- hero carousel -------------------------------------------- */
++
++    var HERO_INTERVAL_MS = 6000;
++
++    /**
++     * Rotates the hero slides. Stops for reduced-motion users, when the visitor
++     * presses pause, while the pointer or keyboard focus is inside the banner,
++     * and while the tab is hidden. Left and Right arrows move between slides.
++     */
++    function initCarousel(root) {
++        var slides = $$("[data-kw-slide]", root);
++        var dots = $$("[data-kw-dot]", root);
++        var pause = $("[data-kw-pause]", root);
++        var prev = $("[data-kw-prev]", root);
++        var next = $("[data-kw-next]", root);
++        if (slides.length < 2) {
++            return;
++        }
++
++        var current = 0;
++        var timer = null;
++        var userPaused = false;
++        var hovering = false;
++        var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
++
++        function show(index) {
++            current = (index + slides.length) % slides.length;
++            slides.forEach(function (slide, i) {
++                var active = i === current;
++                slide.classList.toggle("is-active", active);
++                slide.setAttribute("aria-hidden", String(!active));
++            });
++            dots.forEach(function (dot, i) {
++                dot.setAttribute("aria-current", String(i === current));
++            });
++        }
++
++        function running() {
++            return !userPaused && !hovering && !reduceMotion && !document.hidden;
++        }
++
++        function stop() {
++            clearInterval(timer);
++            timer = null;
++        }
++
++        function start() {
++            stop();
++            if (running()) {
++                timer = setInterval(function () { show(current + 1); }, HERO_INTERVAL_MS);
++            }
++        }
++
++        function setPaused(value) {
++            userPaused = value;
++            if (pause) {
++                pause.setAttribute("aria-pressed", String(value));
++                pause.setAttribute("aria-label", value ? "Play slideshow" : "Pause slideshow");
++            }
++            start();
++        }
++
++        dots.forEach(function (dot, i) {
++            dot.addEventListener("click", function () { show(i); start(); });
++        });
++        if (prev) {
++            prev.addEventListener("click", function () { show(current - 1); start(); });
++        }
++        if (next) {
++            next.addEventListener("click", function () { show(current + 1); start(); });
++        }
++        if (pause) {
++            pause.addEventListener("click", function () { setPaused(!userPaused); });
++        }
++
++        root.addEventListener("mouseenter", function () { hovering = true; start(); });
++        root.addEventListener("mouseleave", function () { hovering = false; start(); });
++        root.addEventListener("focusin", function () { hovering = true; start(); });
++        root.addEventListener("focusout", function () { hovering = false; start(); });
++
++        root.addEventListener("keydown", function (e) {
++            if (e.key === "ArrowRight") {
++                e.preventDefault();
++                show(current + 1);
++                start();
++            } else if (e.key === "ArrowLeft") {
++                e.preventDefault();
++                show(current - 1);
++                start();
++            }
++        });
++
++        document.addEventListener("visibilitychange", start);
++
++        if (reduceMotion && pause) {
++            pause.setAttribute("aria-pressed", "true");
++            pause.setAttribute("aria-label", "Play slideshow");
++            userPaused = true;
++        }
++        show(0);
++        start();
++    }
++
++    /* ---------- boot ----------------------------------------------------- */
++
++    function ready(fn) {
++        if (document.readyState === "loading") {
++            document.addEventListener("DOMContentLoaded", fn);
++        } else {
++            fn();
++        }
++    }
++
++    ready(function () {
++        $$("[data-kw-suggest]").forEach(initSuggest);
++        $$("[data-kw-fav]").forEach(initFavourites);
++        $$("[data-kw-thumb]").forEach(initGallery);
++        $$("[data-kw-qty]").forEach(initQuantity);
++        $$("[data-kw-toggle]").forEach(initToggle);
++        $$("select[data-kw-autosubmit]").forEach(initAutoSubmit);
++        initMenus();
++        $$("[data-kw-carousel]").forEach(initCarousel);
++        $$("[data-kw-countdown]").forEach(initCountdown);
++        $$("[data-kw-more]").forEach(initMore);
++    });
++})();
+-- 
+2.43.0
+

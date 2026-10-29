@@ -1,47 +1,195 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@using Microsoft.Extensions.Options
+@using WebDS_Test.Services.Localization
+@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@inject IOptions<WebDS_Test.Domain.BrandingOptions> BrandOptions
+@inject WebDS_Test.Services.IThemeCatalog ThemeCatalog
+@inject ITranslator T
+@{
+    var store = StoreOptions.Value;
+    var brand = BrandOptions.Value;
+    var message = TempData["Message"] as string;
+    var messageType = TempData["MessageType"] as string ?? "success";
+    var currentController = (ViewContext.RouteData.Values["controller"] as string ?? string.Empty);
+
+    // UPDATED: Extract the theme resolved globally by the middleware early in the request pipeline
+    var resolvedTheme = Context.Items["Tenant_Shop_Theme"] as WebDS_Test.Domain.ShopTheme ?? ThemeCatalog.Default;
+
+    var dir = T.IsRightToLeft ? "rtl" : "ltr";
+    var currentPath = Context.Request.Path + Context.Request.QueryString;
+}
+<!DOCTYPE html>
+<html lang="@T.Culture" dir="@dir" data-lang="@T.Culture"
+      style="
+        --brand-primary: @resolvedTheme.Primary;
+        --brand-primary-dark: @resolvedTheme.PrimaryDark;
+        --brand-primary-darker: @resolvedTheme.PrimaryDarker;
+        --brand-primary-light: @resolvedTheme.PrimaryLight;
+        --brand-primary-tint: @resolvedTheme.PrimaryTint;
+        --brand-accent: @resolvedTheme.Accent;
+        --brand-accent-dark: @resolvedTheme.AccentDark;
+        --brand-ink: @resolvedTheme.Ink;
+        --brand-ink-muted: @resolvedTheme.InkMuted;
+        --brand-ink-subtle: @resolvedTheme.InkSubtle;
+        --brand-surface: @resolvedTheme.Surface;
+        --brand-surface-muted: @resolvedTheme.SurfaceMuted;
+        --brand-surface-raised: @resolvedTheme.SurfaceRaised;
+        --brand-border: @resolvedTheme.Border;
+        --brand-border-strong: @resolvedTheme.BorderStrong;
+        --brand-danger: @resolvedTheme.Danger;
+        --brand-success: @resolvedTheme.Success;
+        --brand-radius: @(resolvedTheme.Radius)px;
+        --brand-shadow: @resolvedTheme.Shadow;
+        --brand-font: @resolvedTheme.FontStack;
+      ">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Kwikby_MP</title>
-    <script type="importmap"></script>
+    <title>@(ViewData["Title"] is null ? "kwikby" : $"{ViewData["Title"]} · kwikby")</title>
+    <meta name="theme-color" content="@resolvedTheme.Primary" />
+    <link rel="icon" href="~/favicon.ico" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Kwikby_MP.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Kwikby_MP</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Utility top layer link belt ribbon -->
+    <div class="brand-utilitybar">
+        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center">
+                <span class="fw-bold">kwikby Dispatch</span>
+                <span class="utility-divider"></span>
+                <a asp-controller="Catalog" asp-action="Index">@T["controller.catalog"]</a>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+            <div class="d-flex align-items-center">
+                @if (T.Supported.Count > 1)
+                {
+                    <div class="dropdown">
+                        <a class="dropdown-toggle" href="#" role="button" id="languageMenu"
+                           data-bs-toggle="dropdown" aria-expanded="false"
+                           title="@T["language.label"]" aria-label="@T["language.label"]">
+                            @(T.Supported.FirstOrDefault(l => string.Equals(l.Code, T.Culture, StringComparison.OrdinalIgnoreCase))?.NativeName ?? T.Culture)
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="languageMenu">
+                            @foreach (var language in T.Supported)
+                            {
+                                <li>
+                                    <a class="dropdown-item @(string.Equals(language.Code, T.Culture, StringComparison.OrdinalIgnoreCase) ? "active" : "")"
+                                       href="/set-language?code=@language.Code&amp;returnUrl=@Uri.EscapeDataString(currentPath)">
+                                        @language.NativeName <span class="small opacity-75">@language.Name</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                    <span class="utility-divider"></span>
+                }
+                <a asp-controller="Orders" asp-action="Track">@T["controller.track"]</a>
+                <span class="utility-divider"></span>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Account" asp-action="Profile">@User.Identity.Name</a>
+                    <span class="utility-divider"></span>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-white text-decoration-none">@T["controller.signout"]</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login">@T["controller.login"]</a>
+                }
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <!-- Core Marketplace Branding Search Navigation Bar -->
+    <header class="brand-header py-3">
         <div class="container">
-            &copy; 2026 - Kwikby_MP - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="row align-items-center g-3">
+                <div class="col-6 col-md-3">
+                    <a asp-controller="Home" asp-action="Index" class="brand-wordmark text-decoration-none">
+                        <span class="wordmark-liban">kwik</span><span class="wordmark-post">by</span>
+                    </a>
+                </div>
+
+                <div class="col-12 col-md-6 order-md-2">
+                    <form class="brand-search d-flex position-relative" role="search" asp-controller="Catalog" asp-action="Index" method="get">
+                        <input class="form-control" type="search" name="q" value="@Context.Request.Query["q"]" placeholder="@T["controller.searchLabel"]" autocomplete="off" />
+                        <button class="btn" type="submit" aria-label="Search">
+                            <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" /></svg>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="col-6 col-md-3 order-md-3 text-end">
+                    @await Component.InvokeAsync("CartBadge")
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub-Level Platform Routing Track Link Rails -->
+    <nav class="brand-nav">
+        <div class="container">
+            <ul class="nav flex-wrap align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link @(currentController == "Catalog" ? "active" : "")" asp-controller="Catalog" asp-action="Index">@T["controller.catalog"]</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a>
+                </li>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li class="nav-item"><a class="nav-link" asp-controller="Orders" asp-action="Index">@T["controller.orders"]</a></li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">HQ Backoffice</a></li>
+                    }
+                    <li class="nav-item"><a class="nav-link" asp-area="Vendor" asp-controller="Dashboard" asp-action="Index">Vendor Desk</a></li>
+                }
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-3">
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+                @message
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+    </div>
+
+    <!-- Layout viewport executing frame -->
+    <main role="main" class="flex-grow-1">
+        <div class="container pb-5 mt-4">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="site-footer py-5 mt-auto">
+        <div class="container text-center text-md-start">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <span class="brand-wordmark mb-2 d-inline-flex">
+                        <span style="color:#fff;">kwik</span><span style="color:var(--brand-accent);">by</span>
+                    </span>
+                    <p class="mt-2 text-white-50">@T["footer.legal"]</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h6>Support Operations</h6>
+                    <p class="text-white-50 mb-0">Questions? Contact support at <a href="mailto:@store.SupportEmail">@store.SupportEmail</a></p>
+                </div>
+            </div>
+            <hr class="my-4 border-secondary" />
+            <div class="d-flex flex-wrap justify-content-between gap-2 small text-white-50">
+                <span>&copy; @DateTime.UtcNow.Year @store.Name. All rights reserved.</span>
+                <a asp-controller="Home" asp-action="Privacy" class="text-white-50">@T["footer.privacy"]</a>
+            </div>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

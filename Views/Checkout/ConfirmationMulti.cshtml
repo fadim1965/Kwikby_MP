@@ -1,0 +1,83 @@
+@model IReadOnlyList<WebDS_Test.Domain.Order>
+@{
+    var currency = "@(await (Context.RequestServices.GetService(typeof(WebDS_Test.Domain.StoreSettings))) as WebDS_Test.Domain.StoreSettings).CurrencySymbol";
+    string Money(decimal value) => currency + value.ToString("N2");
+}
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-12">
+            <h1 class="h3 mb-3">@(Model.Count > 1 ? "Orders" : "Order") confirmed</h1>
+            <p class="text-muted mb-0">
+                @(Model.Count > 1
+                    ? Model.Count + " orders placed"
+                    : "Your order has been placed")
+            </p>
+        </div>
+        <div class="col-12">
+            <a asp-controller="Cart" asp-action="Index" class="btn btn-primary w-100">Continue shopping</a>
+        </div>
+    </div>
+    @if (Model.Count > 1)
+    {
+        <div class="alert alert-light border mt-3 small">
+            <strong>@Model.Count order(s) placed.</strong> Each order will be fulfilled by its respective shop, and you will receive separate confirmations and shipment updates for each.
+        </div>
+    }
+
+    @foreach (var o in Model)
+    {
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Order @o.OrderNumber</span>
+                <span class="small text-muted">@o.PlacedUtc.ToString("yyyy-MM-dd HH:mm")</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-end">Qty</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Total</th>
+                        </thead>
+                        <tbody>
+                        @foreach (var line in o.Lines)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@line.ProductName</div>
+                                    @if (!string.IsNullOrWhiteSpace(line.VariantName))
+                                    {
+                                        <div class="text-muted small">@line.VariantName</div>
+                                    }
+                                </td>
+                                <td class="text-end">@line.Quantity</td>
+                                <td class="text-end">@Money(line.UnitPrice)</td>
+                                <td class="text-end">@Money(line.LineTotal)</td>
+                            </tr>
+                        }
+                        @if (o.Lines.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-muted">(no items)</td></tr>
+                        }
+                        </tbody>
+                </table>
+            </div>
+            <div class="card-footer small text-muted">
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal: @Money(o.Subtotal)</span>
+                    @if (o.DiscountTotal > 0m)
+                    {
+                        <span>Discount: -@Money(o.DiscountTotal)</span>
+                    }
+                    <span>Shipping: @(o.ShippingTotal == 0m ? "Free" : Money(o.ShippingTotal))</span>
+                    <span>Tax: @Money(o.TaxTotal)</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold mt-2">
+                    <span>Total due on delivery: @Money(o.GrandTotal)</span>
+                </div>
+            </div>
+        </div>
+        <hr class="my-3" />
+    }
+</div>

@@ -1,0 +1,37 @@
+@model AdminReportsIndexViewModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h2 class="h4 mb-1">Reports</h2>
+        <p class="text-muted small mb-0">
+            @Model.Reports.Count reports covering the whole marketplace. Open one to choose its date
+            range and grouping, preview it on screen, and download it as a PDF.
+        </p>
+    </div>
+</div>
+
+<div class="row g-3">
+    @foreach (var report in Model.Reports)
+    {
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="h6 mb-1">@report.Name</h3>
+                    <p class="text-muted small mb-2">@report.Description</p>
+                    @if (report.GroupBy.Count > 0)
+                    {
+                        <span class="badge text-bg-light border">@report.GroupBy.Count groupings</span>
+                    }
+                </div>
+                <div class="card-footer bg-white border-0 pt-0 pb-3 px-3">
+                    <a class="btn btn-primary btn-sm"
+                       asp-area="Admin" asp-controller="Reports" asp-action="Report"
+                       asp-route-key="@report.Key">Open report</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

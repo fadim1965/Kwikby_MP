@@ -1,0 +1,145 @@
+@model WebDS_Test.Areas.Admin.Controllers.AdminVerificationListViewModel
+@{
+    ViewData["Title"] = "Seller Verification";
+    var statuses = new[]
+    {
+        (VerificationStatus.NotStarted, "Not started"),
+        (VerificationStatus.Pending, "Awaiting verification"),
+        (VerificationStatus.Approved, "Verified"),
+        (VerificationStatus.Rejected, "Rejected")
+    };
+}
+
+<h1 class="h3 mb-4">Seller Verification</h1>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <ul class="nav nav-pills mb-3" role="tablist">
+            @foreach (var (status, label) in statuses)
+            {
+                var count = Model.Counts.TryGetValue(status, out var c) ? c : 0;
+                var active = Model.Status == status ? "active" : "";
+                <li class="nav-item">
+                    <a class="nav-link @active" href="@Url.Action("Index", new { status })">
+                        @label <span class="badge bg-light text-dark ms-1">@count</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+@if (Model.Shops.Count == 0)
+{
+    <div class="alert alert-info">
+        No shops in the verification queue.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">ID</th>
+                            <th>Shop</th>
+                            <th>Owner</th>
+                            <th style="width: 160px;">Status</th>
+                            <th style="width: 140px;">Submitted</th>
+                            <th style="width: 180px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var shop in Model.Shops)
+                        {
+                            <tr>
+                                <td>@shop.Id</td>
+                                <td>
+                                    <strong>@shop.Name</strong>
+                                    @if (shop.VerificationStatus == VerificationStatus.Approved)
+                                    {
+                                        <span class="badge bg-success ms-2">Verified Seller</span>
+                                    }
+                                    <br />
+                                    <small class="text-muted">@shop.Slug</small>
+                                </td>
+                                <td>
+                                    @if (shop.Owner != null)
+                                    {
+                                        <a href="@Url.Action("Details", "Customers", new { area = "Admin", id = shop.OwnerUserId })">
+                                            @shop.Owner.DisplayName
+                                        </a>
+                                        <br />
+                                        <small class="text-muted">@shop.Owner.Email</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Unknown</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @shop.VerificationStatus.ToCssClass()">@shop.VerificationStatus.ToDisplay()</span>
+                                    @if (!string.IsNullOrWhiteSpace(shop.VerificationReason))
+                                    {
+                                        <div class="text-danger small mt-1">@shop.VerificationReason</div>
+                                    }
+                                </td>
+                                <td>
+                                    @shop.CreatedUtc.ToLocalTime():yyyy-MM-dd HH:mm
+                                    @if (shop.VerifiedUtc.HasValue)
+                                    {
+                                        <br /><small class="text-success">Verified: @shop.VerifiedUtc.Value.ToLocalTime():yyyy-MM-dd HH:mm</small>
+                                    }
+                                    @if (shop.RejectedUtc.HasValue)
+                                    {
+                                        <br /><small class="text-danger">Rejected: @shop.RejectedUtc.Value.ToLocalTime():yyyy-MM-dd HH:mm</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        @if (shop.VerificationStatus == VerificationStatus.Pending)
+                                        {
+                                            <form method="post" asp-action="Approve" asp-route-id="@shop.Id" asp-route-filter="@Model.Status" asp-route-page="@ViewContext.RouteData.Values["page"]" class="d-inline">
+                                                <button type="submit" class="btn btn-outline-success" title="Approve verification">
+                                                    <i class="bi bi-check-lg"></i> Approve
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-action="Reject" asp-route-id="@shop.Id" asp-route-filter="@Model.Status" asp-route-page="@ViewContext.RouteData.Values["page"]" class="d-inline" onsubmit="return confirmReject(this);">
+                                                <input type="hidden" name="reason" id="reject-reason-@shop.Id" />
+                                                <button type="submit" class="btn btn-outline-danger" title="Reject verification">
+                                                    <i class="bi bi-x-lg"></i> Reject
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (shop.VerificationStatus == VerificationStatus.Rejected)
+                                        {
+                                            <span class="text-muted small">Rejected — vendor may resubmit</span>
+                                        }
+                                        @if (shop.VerificationStatus == VerificationStatus.Approved)
+                                        {
+                                            <span class="text-success small">Verified Seller</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+function confirmReject(form) {
+    const shopId = form.action.split('/').pop(); // hacky but works for our simple URLs
+    const reason = prompt("Enter rejection reason (required):");
+    if (!reason || !reason.trim()) {
+        return false;
+    }
+    form.querySelector('input[name="reason"]').value = reason.trim();
+    return true;
+}
+</script>

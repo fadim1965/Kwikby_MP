@@ -1,8 +1,119 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model WebDS_Test.Controllers.HomeViewModel
+@using Microsoft.Extensions.Options
+@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@{
+    var store = StoreOptions.Value;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Central Platform Grid Segment -->
+<section class="hero p-4 p-lg-5 mb-5 shadow-sm text-center text-lg-start">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <h1 class="display-4 fw-extrabold text-white mb-3" style="letter-spacing: -1px;">⚡ KWIKBY EXPRESS MULTI-VENDOR MARKETPLACE</h1>
+            <p class="lead mb-4 opacity-90 text-light">
+                Get everything you need delivered straight from local verified vendors right to your doorstep in minutes. Clear front-end cataloging with full transparent monitoring.
+            </p>
+
+            <!-- In-line Quick Order Tracking Mechanism -->
+            <form asp-controller="Orders" asp-action="Track" method="get" class="d-inline-flex w-100 max-width-md mx-auto ms-lg-0 mb-3 shadow-lg">
+                <input type="text" name="id" placeholder="Enter Order Tracking Number" class="form-control form-control-lg border-0 bg-white" style="border-radius: var(--brand-radius) 0 0 var(--brand-radius); font-size: 15px;" required />
+                <button type="submit" class="btn btn-brand px-4" style="border-radius: 0 var(--brand-radius) var(--brand-radius) 0; white-space: nowrap;">Track Order</button>
+            </form>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="hero-stat p-3 text-center">
+                        <div class="h3 fw-bold text-white mb-1">@Model.Featured.Count</div>
+                        <div class="small text-white-50">Active Vendors</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="hero-stat p-3 text-center">
+                        <div class="h3 fw-bold text-white mb-1">Free</div>
+                        <div class="small text-white-50">Over @store.CurrencySymbol@store.FreeShippingThreshold.ToString("N0")</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="hero-stat p-3 text-center">
+                        <div class="h3 fw-bold text-white mb-1">@Model.Categories.Count</div>
+                        <div class="small text-white-50">Departments</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="hero-stat p-3 text-center">
+                        <div class="h3 fw-bold text-white mb-1">Fast</div>
+                        <div class="small text-white-50">Local Dispatch</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (Model.Categories.Count > 0)
+{
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 fw-bold mb-0">🔥 Shop by department</h2>
+            <a class="text-primary fw-semibold small" asp-controller="Catalog" asp-action="Index">See everything &rarr;</a>
+        </div>
+        <div class="row g-3">
+            @foreach (var category in Model.Categories)
+            {
+                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                    <a class="category-tile p-3 d-flex flex-column h-100 text-decoration-none" asp-controller="Catalog" asp-action="Index" asp-route-category="@category.Slug">
+                        <div class="tile-icon p-2 fs-4 fw-bold mb-2 text-center" style="width:45px; height:45px; display:grid; place-items:center;">
+                            @category.Name.Substring(0, 1).ToUpperInvariant()
+                        </div>
+                        <div class="fw-bold text-dark fs-6">@category.Name</div>
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 fw-bold mb-0">🌟 Featured Items from Top Vendors</h2>
+        <a class="text-primary fw-semibold small" asp-controller="Catalog" asp-action="Index">All products</a>
+    </div>
+
+    @if (Model.Featured.Count == 0)
+    {
+        <div class="alert alert-info border-0 shadow-sm mb-0">
+            No items are published on the marketplace matrix yet.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
+            @foreach (var card in Model.Featured)
+            {
+                <div class="col">
+                    <partial name="_ProductCard" model="card" />
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@if (Model.BestSellers.Count > 0)
+{
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 fw-bold mb-0">🏆 Popular right now</h2>
+            <a class="text-primary fw-semibold small" asp-controller="Catalog" asp-action="Index" asp-route-sort="@ProductSort.BestSelling">More best sellers</a>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
+            @foreach (var card in Model.BestSellers)
+            {
+                <div class="col">
+                    <partial name="_ProductCard" model="card" />
+                </div>
+            }
+        </div>
+    </section>
+}

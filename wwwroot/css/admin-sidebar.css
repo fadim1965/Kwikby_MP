@@ -1,0 +1,486 @@
+/* ==========================================================================
+   admin-sidebar.css — Modern SWIFFI-style admin sidebar
+   ========================================================================== */
+
+/* ---------- CSS Variables for Admin Sidebar ------------------------------- */
+
+:root {
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 72px;
+    --topbar-height: 64px;
+    --sidebar-bg: var(--brand-primary-darker);
+    --sidebar-bg-hover: rgba(255, 255, 255, 0.08);
+    --sidebar-bg-active: rgba(255, 255, 255, 0.12);
+    --sidebar-text: rgba(255, 255, 255, 0.9);
+    --sidebar-text-muted: rgba(255, 255, 255, 0.55);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --sidebar-accent: var(--brand-accent);
+    --sidebar-accent-hover: var(--brand-accent-dark);
+    --sidebar-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Kwikby theme overrides - more vibrant, modern look */
+.admin-kwikby {
+    --sidebar-bg: #0e1a2f;
+    --sidebar-bg-hover: rgba(71, 138, 219, 0.15);
+    --sidebar-bg-active: rgba(71, 138, 219, 0.25);
+    --sidebar-text: #e4effa;
+    --sidebar-text-muted: #94a3b8;
+    --sidebar-border: rgba(71, 138, 219, 0.2);
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    .admin-kwikby {
+        --sidebar-bg: #0a1426;
+    }
+}
+
+/* ---------- Layout -------------------------------------------------------- */
+
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 1030;
+    transition: var(--sidebar-transition);
+    overflow-y: auto;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: var(--sidebar-transition);
+}
+
+/* Mobile sidebar */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1025;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.sidebar-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+    }
+    .admin-sidebar.open {
+        transform: translateX(0);
+    }
+    .admin-main {
+        margin-left: 0;
+    }
+}
+
+/* ---------- Sidebar Header ------------------------------------------------ */
+
+.sidebar-header {
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--sidebar-border);
+    min-height: var(--topbar-height);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--sidebar-text);
+    transition: var(--sidebar-transition);
+}
+
+.sidebar-brand:hover {
+    color: var(--sidebar-accent);
+}
+
+.brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.admin-kwikby .brand-icon {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+    box-shadow: 0 4px 16px rgba(29, 99, 184, 0.4);
+}
+
+.brand-text {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.brand-primary-word {
+    color: var(--brand-primary-light);
+}
+
+.admin-kwikby .brand-primary-word {
+    color: var(--brand-primary-light);
+}
+
+.brand-accent-word {
+    color: var(--brand-accent);
+    font-weight: 800;
+}
+
+.sidebar-toggle {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: var(--sidebar-bg-hover);
+    color: var(--sidebar-text);
+    cursor: pointer;
+    transition: var(--sidebar-transition);
+}
+
+.sidebar-toggle:hover {
+    background: var(--sidebar-bg-active);
+    color: var(--sidebar-accent);
+}
+
+@media (max-width: 991.98px) {
+    .sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* ---------- Sidebar Divider ----------------------------------------------- */
+
+.sidebar-divider {
+    height: 1px;
+    background: var(--sidebar-border);
+    margin: 0.5rem 1rem;
+}
+
+/* ---------- Navigation ---------------------------------------------------- */
+
+.sidebar-nav {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    overflow-y: auto;
+}
+
+.nav-section {
+    margin-bottom: 1.5rem;
+}
+
+.nav-section-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--sidebar-text-muted);
+    padding: 0.5rem 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 10px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--sidebar-transition);
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--sidebar-accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link:hover {
+    background: var(--sidebar-bg-hover);
+    color: #fff;
+    padding-left: 1.125rem;
+}
+
+.nav-link:hover::before {
+    transform: scaleY(1);
+}
+
+.nav-link.active {
+    background: var(--sidebar-bg-active);
+    color: var(--sidebar-accent);
+    font-weight: 600;
+}
+
+.nav-link.active::before {
+    transform: scaleY(1);
+}
+
+.nav-link i {
+    font-size: 1.1rem;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+    transition: var(--sidebar-transition);
+}
+
+.nav-link:hover i,
+.nav-link.active i {
+    transform: scale(1.1);
+}
+
+/* ---------- Sidebar Footer ------------------------------------------------ */
+
+.sidebar-footer {
+    padding: 1rem 0.75rem;
+    border-top: 1px solid var(--sidebar-border);
+}
+
+.storefront-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 10px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--sidebar-transition);
+    background: var(--sidebar-bg-hover);
+}
+
+.storefront-link:hover {
+    background: var(--sidebar-accent);
+    color: #fff;
+    text-decoration: none;
+}
+
+.storefront-link:hover i:last-child {
+    transform: translate(2px, -2px);
+}
+
+.storefront-link i:last-child {
+    transition: var(--sidebar-transition);
+}
+
+.logout-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 10px;
+    color: var(--sidebar-text-muted);
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--sidebar-transition);
+}
+
+.logout-link:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--brand-danger);
+}
+
+/* ---------- Topbar -------------------------------------------------------- */
+
+.admin-topbar {
+    height: var(--topbar-height);
+    background: var(--brand-surface);
+    border-bottom: 1px solid var(--brand-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.page-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--brand-ink);
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.user-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--brand-ink-muted);
+    background: var(--brand-surface-muted);
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.topbar-right .btn {
+    font-size: 0.8125rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+}
+
+/* ---------- Content Area -------------------------------------------------- */
+
+.admin-content {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+/* ---------- Responsive ---------------------------------------------------- */
+
+@media (max-width: 1199.98px) {
+    :root {
+        --sidebar-width: 240px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --topbar-height: 56px;
+    }
+    
+    .admin-content {
+        padding: 1rem;
+    }
+    
+    .page-title {
+        font-size: 1.1rem;
+    }
+    
+    .user-badge {
+        display: none;
+    }
+}
+
+/* ---------- Scrollbar Styling --------------------------------------------- */
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: var(--sidebar-border);
+    border-radius: 3px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--sidebar-text-muted);
+}
+
+/* ---------- Animation ----------------------------------------------------- */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.nav-section {
+    animation: slideIn 0.3s ease forwards;
+}
+
+.nav-section:nth-child(1) { animation-delay: 0.05s; }
+.nav-section:nth-child(2) { animation-delay: 0.1s; }
+.nav-section:nth-child(3) { animation-delay: 0.15s; }
+.nav-section:nth-child(4) { animation-delay: 0.2s; }
+.nav-section:nth-child(5) { animation-delay: 0.25s; }
+.nav-section:nth-child(6) { animation-delay: 0.3s; }
+.nav-section:nth-child(7) { animation-delay: 0.35s; }
+
+/* ---------- Reduced Motion ------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ---------- Print --------------------------------------------------------- */
+
+@media print {
+    .admin-sidebar,
+    .admin-topbar,
+    .sidebar-overlay {
+        display: none !important;
+    }
+    .admin-main {
+        margin-left: 0;
+    }
+    .admin-content {
+        padding: 0;
+    }
+}

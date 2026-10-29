@@ -1,0 +1,315 @@
+﻿/* ---------- Fallback tokens (overridden by the server-rendered palette) --- */
+
+:root {
+    --brand-primary: #1d63b8;
+    --brand-primary-dark: #154c8f;
+    --brand-primary-darker: #0e3464;
+    --brand-primary-light: #478adb;
+    --brand-primary-tint: #e4effa;
+    --brand-accent: #46af29;
+    --brand-accent-dark: #35851f;
+    --brand-ink: #121824;
+    --brand-ink-muted: #334155;
+    --brand-ink-subtle: #64748b;
+    --brand-surface: #ffffff;
+    --brand-surface-muted: #f8fafc;
+    --brand-surface-raised: #f1f5f9;
+    --brand-border: #cbd5e1;
+    --brand-border-strong: #94a3b8;
+    --brand-danger: #ef4444;
+    --brand-success: #22c55e;
+    --brand-radius: 4px;
+    --brand-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+    --brand-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ---------- Base ---------------------------------------------------------- */
+
+body {
+    font-family: var(--brand-font);
+    font-size: 15px;
+    color: var(--brand-ink);
+    background-color: var(--brand-surface-muted);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: var(--brand-ink);
+}
+
+a {
+    color: var(--brand-primary);
+    text-decoration: none;
+}
+
+    a:hover {
+        color: var(--brand-accent-dark);
+        text-decoration: underline;
+    }
+
+.text-muted {
+    color: var(--brand-ink-subtle) !important;
+}
+
+hr {
+    border-color: var(--brand-border);
+    opacity: 1;
+}
+
+/* ---------- Brand buttons ------------------------------------------------- */
+
+.btn {
+    border-radius: var(--brand-radius);
+    font-weight: 600;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+/* Signature Kwikby action: Solid accent theme background, drops out to clean ghost outline on hover */
+.btn-brand {
+    background-color: var(--brand-accent);
+    border: 2px solid var(--brand-accent);
+    color: #fff !important;
+    padding: .45rem 1.1rem;
+}
+
+    .btn-brand:hover,
+    .btn-brand:focus {
+        background-color: transparent !important;
+        border-color: var(--brand-accent);
+        color: var(--brand-accent) !important;
+    }
+
+.btn-primary {
+    --bs-btn-bg: var(--brand-primary);
+    --bs-btn-border-color: var(--brand-primary);
+    --bs-btn-hover-bg: var(--brand-primary-dark);
+    --bs-btn-hover-border-color: var(--brand-primary-dark);
+    --bs-btn-active-bg: var(--brand-primary-darker);
+    --bs-btn-active-border-color: var(--brand-primary-darker);
+    --bs-btn-disabled-bg: var(--brand-primary-light);
+    --bs-btn-disabled-border-color: var(--brand-primary-light);
+    --bs-btn-color: #fff;
+    --bs-btn-hover-color: #fff;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--brand-primary);
+    --bs-btn-border-color: var(--brand-primary);
+    --bs-btn-hover-bg: var(--brand-primary);
+    --bs-btn-hover-border-color: var(--brand-primary);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: var(--brand-primary-dark);
+    --bs-btn-active-border-color: var(--brand-primary-dark);
+}
+
+.btn-outline-light {
+    --bs-btn-color: #fff;
+    --bs-btn-border-color: rgba(255, 255, 255, .75);
+    --bs-btn-hover-bg: #fff;
+    --bs-btn-hover-border-color: #fff;
+    --bs-btn-hover-color: var(--brand-primary);
+}
+
+/* ---------- Utility bar -------------------------------------------------- */
+
+.brand-utilitybar {
+    background-color: var(--brand-primary-dark);
+    color: #fff;
+    font-size: 14px;
+    padding: .45rem 0;
+}
+
+    .brand-utilitybar a {
+        color: #fff;
+    }
+
+        .brand-utilitybar a:hover {
+            color: var(--brand-accent);
+        }
+
+    .brand-utilitybar .utility-divider {
+        border-left: 1px solid rgba(255, 255, 255, .2);
+        margin: 0 .75rem;
+    }
+
+/* ---------- Header ------------------------------------------------------- */
+
+.brand-header {
+    background-color: var(--brand-surface);
+    border-bottom: 1px solid var(--brand-border);
+}
+
+.brand-wordmark {
+    display: inline-flex;
+    align-items: baseline;
+    font-weight: 800;
+    font-size: 2rem;
+    letter-spacing: -0.75px;
+}
+
+    .brand-wordmark .wordmark-liban {
+        color: var(--brand-primary);
+    }
+
+    .brand-wordmark .wordmark-post {
+        color: var(--brand-accent);
+    }
+
+.brand-search .form-control {
+    border: 1px solid var(--brand-border-strong);
+    border-right: none;
+    border-radius: var(--brand-radius) 0 0 var(--brand-radius);
+}
+
+    .brand-search .form-control:focus {
+        border-color: var(--brand-primary);
+        box-shadow: none;
+    }
+
+.brand-search .btn {
+    background-color: var(--brand-primary);
+    border: 1px solid var(--brand-primary);
+    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
+    color: #fff;
+    width: 46px;
+    display: grid;
+    place-items: center;
+}
+
+    .brand-search .btn:hover {
+        background-color: var(--brand-primary-dark);
+        border-color: var(--brand-primary-dark);
+    }
+
+/* ---------- Primary navigation ------------------------------------------- */
+
+.brand-nav {
+    background-color: var(--brand-surface);
+    border-bottom: 3px solid var(--brand-primary);
+}
+
+    .brand-nav .nav-link {
+        color: var(--brand-ink);
+        font-weight: 600;
+        padding: .65rem 1rem;
+        border-bottom: 4px solid transparent;
+    }
+
+        .brand-nav .nav-link:hover,
+        .brand-nav .nav-link.active {
+            color: var(--brand-primary);
+            border-bottom-color: var(--brand-accent);
+        }
+
+.cart-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem 1rem;
+    border-radius: var(--brand-radius);
+    background-color: var(--brand-accent);
+    color: #fff;
+    font-weight: 700;
+}
+
+    .cart-pill:hover {
+        background-color: var(--brand-accent-dark);
+        color: #fff;
+    }
+
+    .cart-pill .cart-count {
+        background-color: #fff;
+        color: var(--brand-ink);
+        border-radius: 999px;
+        font-size: .75rem;
+        padding: .05rem .45rem;
+    }
+
+/* ---------- Surfaces ----------------------------------------------------- */
+
+.card {
+    border-radius: var(--brand-radius);
+    border: 1px solid var(--brand-border);
+    background-color: var(--brand-surface);
+    box-shadow: var(--brand-shadow);
+}
+
+.card-header {
+    background-color: var(--brand-surface-raised);
+    border-bottom: 1px solid var(--brand-border);
+}
+
+.card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .06);
+    }
+
+/* ---------- Hero --------------------------------------------------------- */
+
+.hero {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-darker) 100%);
+    color: #fff;
+    border-radius: var(--brand-radius);
+}
+
+.hero-stat {
+    background-color: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .15);
+    border-radius: var(--brand-radius);
+}
+
+/* ---------- Category tiles ----------------------------------------------- */
+
+.category-tile {
+    background-color: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius);
+    border-top: 3px solid var(--brand-primary);
+    transition: all 0.2s ease;
+}
+
+    .category-tile:hover {
+        border-color: var(--brand-primary);
+        box-shadow: var(--brand-shadow);
+        transform: scale(1.02);
+    }
+
+    .category-tile .tile-icon {
+        border-radius: var(--brand-radius);
+        background-color: var(--brand-primary-tint);
+        color: var(--brand-primary);
+    }
+
+/* ---------- Forms & Layouts ---------------------------------------------- */
+
+.form-control, .form-select {
+    border-radius: var(--brand-radius);
+}
+
+.site-footer {
+    background-color: var(--brand-primary-darker);
+    border-top: 4px solid var(--brand-primary);
+    color: #94a3b8;
+}
+
+    .site-footer h6 {
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .site-footer a {
+        color: #cbd5e1;
+    }
+
+        .site-footer a:hover {
+            color: var(--brand-accent);
+        }
+
+.star-rating-fill {
+    color: var(--brand-accent);
+}

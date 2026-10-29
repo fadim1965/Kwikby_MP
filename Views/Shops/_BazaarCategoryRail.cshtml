@@ -1,0 +1,18 @@
+@model WebDS_Test.Controllers.ShopStorefrontViewModel
+@if (Model.Categories.Count > 0)
+{
+    <section class="bazaar-section" aria-labelledby="bazaarCats">
+        <h2 id="bazaarCats" class="bazaar-heading">Shop by category</h2>
+        <ul class="bazaar-rail">
+            @foreach (var category in Model.Categories)
+            {
+                <li>
+                    <a class="bazaar-circle-link" asp-action="Details" asp-route-slug="@Model.Shop.Slug" asp-route-category="@category.Slug">
+                        <span class="bazaar-circle" aria-hidden="true">@(category.Name.Length > 0 ? category.Name.Substring(0, 1).ToUpperInvariant() : "•")</span>
+                        <span class="bazaar-circle-label">@category.Name</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </section>
+}

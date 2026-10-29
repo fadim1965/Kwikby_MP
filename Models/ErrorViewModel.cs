@@ -1,4 +1,4 @@
-namespace Kwikby_MP.Models
+namespace WebDS_Test.Models
 {
     public class ErrorViewModel
     {

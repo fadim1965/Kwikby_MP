@@ -1,0 +1,25 @@
+@model WebDS_Test.Controllers.ShopStorefrontViewModel
+@using Microsoft.Extensions.Options
+@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@{
+    var symbol = StoreOptions.Value.CurrencySymbol;
+    var shop = Model.Shop;
+}
+<div class="bazaar-promo" role="note">
+    <div class="container d-flex flex-wrap justify-content-center gap-3 py-2">
+        @if (shop.FreeShippingThreshold is decimal threshold)
+        {
+            <span>Free delivery from @shop.Name on orders over @symbol@threshold.ToString("0.00")</span>
+        }
+        else if (shop.FlatShippingRate is decimal rate)
+        {
+            <span>Delivery from @shop.Name: @symbol@rate.ToString("0.00") per order</span>
+        }
+        else
+        {
+            <span>Shop @shop.Name with confidence on LibanPost</span>
+        }
+        <span class="bazaar-promo-dot" aria-hidden="true">&bull;</span>
+        <span>Cash on delivery or card at checkout</span>
+    </div>
+</div>

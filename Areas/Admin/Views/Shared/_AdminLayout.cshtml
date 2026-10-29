@@ -1,0 +1,259 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@inject IOptions<WebDS_Test.Domain.BrandingOptions> BrandOptions
+@inject WebDS_Test.Services.IThemeCatalog ThemeCatalog
+@{
+    var store = StoreOptions.Value;
+    var brand = BrandOptions.Value;
+    var message = TempData["Message"] as string;
+    var messageType = TempData["MessageType"] as string ?? "success";
+    var controller = (ViewContext.RouteData.Values["controller"] as string ?? string.Empty).ToLowerInvariant();
+
+    string Active(string name) => controller == name.ToLowerInvariant() ? "active" : string.Empty;
+    
+    // Check if current theme is a kwikby theme for enhanced styling
+    var currentThemeKey = store.Theme > 0 ? store.Theme.ToString() : "";
+    var isKwikbyTheme = currentThemeKey.StartsWith("kwik-", StringComparison.OrdinalIgnoreCase);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] is null ? "Admin" : $"{ViewData["Title"]} · Admin") · @store.Name</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="@brand.Primary" />
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>:root{@Html.Raw(brand.ToCssVariables())}</style>
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-sidebar.css" asp-append-version="true" />
+</head>
+<body class="admin-body @(isKwikbyTheme ? "admin-kwikby" : "")">
+    <div class="admin-wrapper">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <a class="sidebar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="brand-icon"><i class="bi bi-shop"></i></span>
+                    <span class="brand-text">
+                        <span class="brand-primary-word">Liban</span><span class="brand-accent-word">Post</span>
+                    </span>
+                </a>
+                <button class="sidebar-toggle d-lg-none" type="button" aria-label="Toggle navigation" onclick="toggleSidebar()">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a class="nav-link @Active("Dashboard")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Catalogue</div>
+                    <a class="nav-link @Active("Products")" asp-area="Admin" asp-controller="Products" asp-action="Index">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Products</span>
+                    </a>
+                    <a class="nav-link @Active("Import")" asp-area="Admin" asp-controller="Import" asp-action="Index">
+                        <i class="bi bi-upload"></i>
+                        <span>Import</span>
+                    </a>
+                    <a class="nav-link @Active("Categories")" asp-area="Admin" asp-controller="Categories" asp-action="Index">
+                        <i class="bi bi-tags"></i>
+                        <span>Categories</span>
+                    </a>
+                    <a class="nav-link @Active("Inventory")" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+                        <i class="bi bi-boxes"></i>
+                        <span>Inventory</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Sales</div>
+                    <a class="nav-link @Active("Orders")" asp-area="Admin" asp-controller="Orders" asp-action="Index">
+                        <i class="bi bi-receipt"></i>
+                        <span>Orders</span>
+                    </a>
+                    <a class="nav-link @Active("Returns")" asp-area="Admin" asp-controller="Returns" asp-action="Index">
+                        <i class="bi bi-arrow-return-left"></i>
+                        <span>Returns</span>
+                    </a>
+                    <a class="nav-link @Active("PostSale")" asp-area="Admin" asp-controller="PostSale" asp-action="Index">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>After-sales</span>
+                    </a>
+                    <a class="nav-link @Active("Customers")" asp-area="Admin" asp-controller="Customers" asp-action="Index">
+                        <i class="bi bi-people"></i>
+                        <span>Customers</span>
+                    </a>
+                    <a class="nav-link @Active("Coupons")" asp-area="Admin" asp-controller="Coupons" asp-action="Index">
+                        <i class="bi bi-tag"></i>
+                        <span>Coupons</span>
+                    </a>
+                    <a class="nav-link @Active("Tax")" asp-area="Admin" asp-controller="Tax" asp-action="Index">
+                        <i class="bi bi-calculator"></i>
+                        <span>Tax</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Marketplace</div>
+                    <a class="nav-link @Active("Shops")" asp-area="Admin" asp-controller="Shops" asp-action="Index">
+                        <i class="bi bi-building"></i>
+                        <span>Shops</span>
+                    </a>
+                    <a class="nav-link @Active("Verification")" asp-area="Admin" asp-controller="Verification" asp-action="Index">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Seller verification</span>
+                    </a>
+                    <a class="nav-link @Active("Moderation")" asp-area="Admin" asp-controller="Moderation" asp-action="Index">
+                        <i class="bi bi-shield-lock"></i>
+                        <span>Listing moderation</span>
+                    </a>
+                    <a class="nav-link @Active("Payouts")" asp-area="Admin" asp-controller="Payouts" asp-action="Index">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>Payouts</span>
+                    </a>
+                    <a class="nav-link @Active("Marketing")" asp-area="Admin" asp-controller="Marketing" asp-action="Index">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Marketing</span>
+                    </a>
+                    <a class="nav-link @Active("Reviews")" asp-area="Admin" asp-controller="Reviews" asp-action="Index">
+                        <i class="bi bi-star"></i>
+                        <span>Reviews</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Analysis</div>
+                    <a class="nav-link @Active("Reports")" asp-area="Admin" asp-controller="Reports" asp-action="Index">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Reports</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <a class="nav-link @Active("Emails")" asp-area="Admin" asp-controller="Emails" asp-action="Index">
+                        <i class="bi bi-envelope"></i>
+                        <span>Emails</span>
+                    </a>
+                    <a class="nav-link @Active("Audit")" asp-area="Admin" asp-controller="Audit" asp-action="Index">
+                        <i class="bi bi-journal-text"></i>
+                        <span>Audit trail</span>
+                    </a>
+                    <a class="nav-link @Active("Settings")" asp-area="Admin" asp-controller="Settings" asp-action="Index">
+                        <i class="bi bi-gear"></i>
+                        <span>Settings</span>
+                    </a>
+                    <a class="nav-link @Active("Translations")" asp-area="Admin" asp-controller="Translations" asp-action="Index">
+                        <i class="bi bi-translate"></i>
+                        <span>Translations</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-divider"></div>
+                <a class="nav-link storefront-link" asp-area="" asp-controller="Home" asp-action="Index" target="_blank">
+                    <i class="bi bi-globe"></i>
+                    <span>View eShop</span>
+                    <i class="bi bi-box-arrow-up-right ms-auto"></i>
+                </a>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="mt-2">
+                    <button type="submit" class="nav-link logout-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Sign out</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay d-lg-none" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <div class="admin-main">
+            <header class="admin-topbar">
+                <div class="topbar-left">
+                    <h1 class="page-title">@ViewData["Title"]</h1>
+                    <span class="user-badge">@User.Identity?.Name</span>
+                </div>
+                <div class="topbar-right">
+                    <a class="btn btn-outline-primary btn-sm" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-arrow-left"></i> Back to eShop
+                    </a>
+                </div>
+            </header>
+
+            <main class="admin-content">
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+                        @message
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+            <div class="col-lg-10 p-0">
+                <div class="admin-topbar px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+                        <div class="small text-muted">Signed in as @User.Identity?.Name</div>
+                    </div>
+                    <a class="btn btn-outline-primary btn-sm" asp-area="" asp-controller="Home" asp-action="Index">
+                        Back to eShop
+                    </a>
+                </div>
+
+                <div class="p-4">
+                    @if (!string.IsNullOrEmpty(message))
+                    {
+                        <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+                            @message
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @RenderBody()
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        // Close sidebar on link click on mobile
+        document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 992) {
+                    toggleSidebar();
+                }
+            });
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

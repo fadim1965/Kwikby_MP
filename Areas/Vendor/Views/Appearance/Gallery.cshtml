@@ -1,0 +1,129 @@
+@model WebDS_Test.Areas.Vendor.Controllers.ShopAppearanceViewModel
+@{
+    ViewData["Title"] = "Theme Gallery";
+    var themes = Model.Themes;
+    
+    // Group themes by category (extract base name before the number suffix)
+    var categoryGroups = themes
+        .GroupBy(t => {
+            var key = t.Key;
+            // Extract the category part (everything before the last "-N" suffix, or the whole key if no suffix)
+            var lastDash = key.LastIndexOf('-');
+            if (lastDash > 0 && int.TryParse(key.Substring(lastDash + 1), out _))
+            {
+                return key.Substring(0, lastDash);
+            }
+            return key;
+        })
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">Theme Gallery</h1>
+            <p class="text-muted mb-0">Browse all @themes.Count themes across 12 business categories. Each category has 6 unique visual styles.</p>
+        </div>
+        <div>
+            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Appearance" asp-action="Index">Back to Appearance</a>
+        </div>
+    </div>
+
+    @foreach (var group in categoryGroups)
+    {
+        var categoryName = group.First().Name.Split(' ').Take(2).Aggregate((a, b) => a + " " + b);
+        // Get the base category name from the first theme's name (without the number)
+        var baseName = group.First().Name;
+        var lastSpace = baseName.LastIndexOf(' ');
+        if (lastSpace > 0 && int.TryParse(baseName.Substring(lastSpace + 1), out _))
+        {
+            baseName = baseName.Substring(0, lastSpace);
+        }
+        
+        <div class="mb-5">
+            <h4 class="mb-3 border-bottom pb-2">
+                <span class="text-primary">@baseName</span>
+                <span class="badge bg-secondary ms-2">@group.Count() themes</span>
+            </h4>
+            <p class="text-muted small mb-3">@group.First().Description</p>
+            
+            <div class="row g-3">
+                @foreach (var theme in group)
+                {
+                    var isSelected = theme.Key == Model.SelectedKey;
+                    
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <div class="theme-card card h-100 @(isSelected ? "is-selected" : "")" style="@theme.ToCssVariables()" data-theme-key="@theme.Key">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <h6 class="card-title mb-0 small">@theme.Name</h6>
+                                    <span class="badge bg-secondary tone-badge" style="font-size:0.6rem;">@theme.Tone</span>
+                                </div>
+                                
+                                <!-- Color swatches -->
+                                <div class="d-flex gap-1 mb-2">
+                                    @foreach (var colour in theme.Swatch)
+                                    {
+                                        <span class="swatch-dot" style="background-color:@colour; border: 1px solid var(--brand-border-strong); width:16px; height:16px; border-radius:3px; display:inline-block;"></span>
+                                    }
+                                </div>
+                                
+                                <!-- Sample preview -->
+                                <div class="theme-preview-mini p-2" style="background: var(--brand-surface-muted); border-radius: var(--brand-radius); border: 1px solid var(--brand-border);">
+                                    <div class="mb-1" style="background: var(--brand-primary); height: 8px; border-radius: 2px;"></div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small" style="color:var(--brand-ink); font-size:0.65rem; font-weight:600;">Product</span>
+                                        <span class="btn-sample" style="background: var(--brand-accent); color:#000; font-size:0.6rem; padding:0.1rem 0.3rem; border-radius:var(--brand-radius); font-weight:600;">Add</span>
+                                    </div>
+                                </div>
+                                
+                                @if (isSelected)
+                                {
+                                    <div class="mt-1 text-center">
+                                        <span class="badge bg-success" style="font-size:0.6rem;">✓ Selected</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Theme gallery CSS -->
+<style>
+    .theme-card {
+        border: 2px solid var(--brand-border);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .theme-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,.15);
+        border-color: var(--brand-primary);
+    }
+    .theme-card.is-selected {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 .2rem var(--brand-primary-tint);
+    }
+    .tone-badge {
+        font-size: 0.6rem;
+        padding: 0.15em 0.4em;
+    }
+</style>
+
+<!-- Theme selection script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeCards = document.querySelectorAll('.theme-card');
+        
+        themeCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const key = this.getAttribute('data-theme-key');
+                // Navigate to appearance page with selected theme
+                window.location.href = '/Vendor/Appearance/Index?themeKey=' + encodeURIComponent(key);
+            });
+        });
+    });
+</script>

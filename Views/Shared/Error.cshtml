@@ -1,25 +1,58 @@
-﻿@model ErrorViewModel
+﻿@model WebDS_Test.Models.ErrorViewModel
+@using Microsoft.Extensions.Options
+@using WebDS_Test.Services
+@inject IThemeCatalog ThemeCatalog
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "System Interrupt";
+
+    // Defensive Fallback Routine: Safely attempt to resolve theme settings even if the middleware pipeline crashed
+    var resolvedTheme = Context.Items["Tenant_Shop_Theme"] as ShopTheme ?? ThemeCatalog.Default;
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 text-center">
+            <!-- Brand Icon representation with active color assignment -->
+            <div class="mb-4 display-1 text-danger animate-pulse">
+                <svg xmlns="http://w3.org" width="80" height="80" fill="currentColor" class="bi bi-exclamation-triangle" viewBox="0 0 16 16">
+                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
+                    <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
+                </svg>
+            </div>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+            <h1 class="display-5 fw-bold text-dark mb-3">Service Temporarily Interrupted</h1>
+            <p class="lead text-muted mb-4">
+                The marketplace routing matrix encountered an unexpected execution event while generating this page. Our platform operations team has been notified.
+            </p>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+            <div class="d-flex justify-content-center gap-2 mb-5">
+                <a href="/" class="btn btn-brand shadow-sm">
+                    &larr; Return to Marketplace Home
+                </a>
+                <button type="button" class="btn btn-outline-secondary" onclick="window.location.reload();">
+                    🔄 Retry Request
+                </button>
+            </div>
+
+            <!-- Secured Administrative Diagnostic Tray -->
+            @if (Model?.ShowRequestId == true)
+            {
+                <div class="card border-0 text-start bg-light-subtle shadow-sm mx-auto max-width-md">
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <span class="small fw-bold text-uppercase text-muted tracking-wider">🔧 Diagnostic Context Trace</span>
+                        <span class="badge font-monospace bg-secondary">HTTP 500</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <span class="small text-muted d-block">Correlation Request Identifier:</span>
+                            <code class="text-danger font-monospace fw-bold break-all">@Model.RequestId</code>
+                        </div>
+                        <p class="small text-muted mb-0" style="font-size: 12px; line-height: 1.4;">
+                            Provide this transaction token identifier to customer care or system operations engineers to fast-track log tracking sweeps across regional data layers.
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

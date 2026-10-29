@@ -1,0 +1,13 @@
+@model WebDS_Test.Controllers.ShopStorefrontViewModel
+@if (Model.Brands.Count > 0)
+{
+    <section class="bazaar-section" aria-labelledby="bazaarBrands">
+        <h2 id="bazaarBrands" class="bazaar-heading">Brands in this shop</h2>
+        <div class="bazaar-brands">
+            @foreach (var brand in Model.Brands)
+            {
+                <a class="bazaar-brand" asp-action="Details" asp-route-slug="@Model.Shop.Slug" asp-route-brand="@brand">@brand</a>
+            }
+        </div>
+    </section>
+}

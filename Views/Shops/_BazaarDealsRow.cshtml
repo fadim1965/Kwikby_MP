@@ -1,0 +1,21 @@
+@model WebDS_Test.Controllers.ShopStorefrontViewModel
+@{
+    var deals = Model.Results.Items.Where(c => c.IsOnSale).Take(8).ToList();
+}
+@if (deals.Count > 0)
+{
+    <section class="bazaar-section" aria-labelledby="bazaarDeals">
+        <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <h2 id="bazaarDeals" class="bazaar-heading mb-0">Deals this page</h2>
+            <span class="small text-muted">Showing sale items from the current results</span>
+        </div>
+        <div class="bazaar-deal-row">
+            @foreach (var card in deals)
+            {
+                <div class="bazaar-deal">
+                    <partial name="_ProductCard" model="card" />
+                </div>
+            }
+        </div>
+    </section>
+}

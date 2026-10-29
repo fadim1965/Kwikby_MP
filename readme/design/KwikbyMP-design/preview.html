@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kwikby: design preview</title>
+<link rel="stylesheet" href="wwwroot/css/kwikby.css">
+</head>
+<body>
+<a class="kw-skip" href="#main">Skip to content</a>
+
+<header class="kw-header">
+  <div class="kw-container kw-header__bar">
+    <a class="kw-logo" href="#" aria-label="Kwikby home"><img src="wwwroot/images/kwikby-logo.png" alt="Kwikby" width="44" height="44"></a>
+    <form class="kw-search" role="search" action="#" onsubmit="return false;">
+      <label class="kw-visually-hidden" for="kw-q">Search for anything</label>
+      <input id="kw-q" class="kw-search__input" type="search" placeholder="Search for anything" autocomplete="off"
+             aria-expanded="false" aria-controls="kw-suggest-list" data-kw-suggest>
+      <ul id="kw-suggest-list" class="kw-suggest" role="listbox"></ul>
+      <button class="kw-search__submit" type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </button>
+    </form>
+    <div class="kw-header__actions">
+      <a class="kw-header__link" href="#">Sign in</a>
+      <a class="kw-header__link" href="#">Sell on Kwikby</a>
+      <button class="kw-icon-btn" type="button" aria-label="Favourites">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+      </button>
+      <a class="kw-icon-btn" href="#" aria-label="Cart, 2 items">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M6 6L5 3H2"/></svg>
+        <span class="kw-count">2</span>
+      </a>
+    </div>
+  </div>
+  <nav class="kw-nav" aria-label="Main">
+    <div class="kw-container kw-nav__inner">
+      <div class="kw-menu">
+        <button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="kw-categories" data-kw-menu-trigger>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <span>Categories</span>
+        </button>
+        <div id="kw-categories" class="kw-categories" hidden>
+          <ul class="kw-categories__list">
+          <li><a class="kw-categories__link" href="#">Jewellery<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Home &amp; Living<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Art &amp; Prints<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Gifts<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Vintage<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Bags &amp; Leather<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Clothing &amp; Accessories<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Crafts &amp; Supplies<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          <li><a class="kw-categories__link" href="#">Wedding<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></a></li>
+          </ul>
+          <a class="kw-categories__all" href="#">All categories</a>
+        </div>
+      </div>
+
+      <ul class="kw-nav__list" aria-label="Browse">
+        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-new" data-kw-menu-trigger><span>New arrivals</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
+        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-deals" data-kw-menu-trigger><span>Deals</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
+        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-gifts" data-kw-menu-trigger><span>Gifts</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
+        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-shops" data-kw-menu-trigger><span>Shops</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
+        <li class="kw-menu"><button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-brands" data-kw-menu-trigger><span>Brands</span><svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button></li>
+        <li><a class="kw-nav__link kw-menu__trigger" href="#">Sell</a></li>
+      </ul>
+    </div>
+
+  <div id="mega-new" class="kw-mega" hidden>
+    <div class="kw-container kw-mega__inner">
+      <div><h3>Shop new</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">All new arrivals</a></li><li><a class="kw-mega__link" href="#">Last 24 hours</a></li><li><a class="kw-mega__link" href="#">Last 7 days</a></li><li><a class="kw-mega__link" href="#">Back in stock</a></li></ul></div>
+      <div><h3>By category</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Jewellery</a></li><li><a class="kw-mega__link" href="#">Home &amp; Living</a></li><li><a class="kw-mega__link" href="#">Art &amp; Prints</a></li></ul></div>
+      <div><h3>Local makers</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">New from Beirut</a></li><li><a class="kw-mega__link" href="#">New from Tripoli</a></li><li><a class="kw-mega__link" href="#">New from Jbeil</a></li></ul></div>
+      <div class="kw-promo"><span class="kw-promo__eyebrow">Spring edit</span><h4>Fresh pieces from this week's makers</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Shop the edit</a></div>
+    </div>
+  </div>
+  <div id="mega-deals" class="kw-mega" hidden>
+    <div class="kw-container kw-mega__inner">
+      <div><h3>By discount</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Up to 25% off</a></li><li><a class="kw-mega__link" href="#">Up to 50% off</a></li><li><a class="kw-mega__link" href="#">Flash sales, ending soon</a></li></ul></div>
+      <div><h3>Free shipping</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Free shipping over $40</a></li><li><a class="kw-mega__link" href="#">Free delivery in Lebanon</a></li></ul></div>
+      <div><h3>Clearance</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Last chance sales</a></li><li><a class="kw-mega__link" href="#">Shops clearing stock</a></li></ul></div>
+      <div class="kw-promo kw-promo--green"><span class="kw-promo__eyebrow">Ends tonight</span><h4>Deals that finish before midnight</h4><a class="kw-btn kw-btn--outline kw-small" href="#">See all deals</a></div>
+    </div>
+  </div>
+  <div id="mega-gifts" class="kw-mega" hidden>
+    <div class="kw-container kw-mega__inner">
+      <div><h3>Gift guides</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">For her</a></li><li><a class="kw-mega__link" href="#">For him</a></li><li><a class="kw-mega__link" href="#">For kids</a></li><li><a class="kw-mega__link" href="#">Under $25</a></li></ul></div>
+      <div><h3>By occasion</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Weddings</a></li><li><a class="kw-mega__link" href="#">Birthdays</a></li><li><a class="kw-mega__link" href="#">Housewarming</a></li><li><a class="kw-mega__link" href="#">Corporate gifts</a></li></ul></div>
+      <div><h3>Gift cards</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Buy a gift card</a></li><li><a class="kw-mega__link" href="#">Redeem a gift card</a></li></ul></div>
+      <div class="kw-promo"><span class="kw-promo__eyebrow">Gift guide</span><h4>Gifts for every occasion, from makers you can trust</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Browse gift guides</a></div>
+    </div>
+  </div>
+  <div id="mega-shops" class="kw-mega" hidden>
+    <div class="kw-container kw-mega__inner">
+      <div><h3>Browse shops</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Star sellers</a></li><li><a class="kw-mega__link" href="#">Top rated shops</a></li><li><a class="kw-mega__link" href="#">New shops</a></li><li><a class="kw-mega__link" href="#">Shops that ship fast</a></li></ul></div>
+      <div><h3>By city</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Beirut</a></li><li><a class="kw-mega__link" href="#">Tripoli</a></li><li><a class="kw-mega__link" href="#">Jbeil</a></li><li><a class="kw-mega__link" href="#">Saida</a></li></ul></div>
+      <div><h3>Community</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Meet our makers</a></li><li><a class="kw-mega__link" href="#">Shop of the week</a></li></ul></div>
+      <div class="kw-promo"><span class="kw-promo__eyebrow">Makers</span><h4>Meet the shops behind the products</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Explore shops</a></div>
+    </div>
+  </div>
+  <div id="mega-brands" class="kw-mega" hidden>
+    <div class="kw-container kw-mega__inner">
+      <div><h3>Featured brands</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Atelier Bekaa</a></li><li><a class="kw-mega__link" href="#">Jbeil Woodworks</a></li><li><a class="kw-mega__link" href="#">Clay &amp; Kiln Studio</a></li></ul></div>
+      <div><h3>Directory</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">A to Z brands</a></li><li><a class="kw-mega__link" href="#">New brands</a></li><li><a class="kw-mega__link" href="#">Heritage brands</a></li></ul></div>
+      <div><h3>Collections</h3><ul><li><a class="kw-mega__link kw-mega__link--strong" href="#">Lebanese craft</a></li><li><a class="kw-mega__link" href="#">Sustainable picks</a></li></ul></div>
+      <div class="kw-promo"><span class="kw-promo__eyebrow">Brands</span><h4>Curated brands, chosen by our editors</h4><a class="kw-btn kw-btn--outline kw-small" href="#">Browse brands</a></div>
+    </div>
+  </div>
+
+  </nav>
+</header>
+
+<main id="main" class="kw-container kw-home" id="kw-home-root">
+
+  <section class="kw-carousel" data-kw-carousel aria-roledescription="carousel" aria-label="Featured">
+    <div class="kw-slide kw-slide--campaign is-active" data-kw-slide role="group" aria-roledescription="slide" aria-label="1 of 4" aria-hidden="false">
+      <span class="kw-slide__label">Kwikby picks</span>
+      <h1 class="">Find something made by hand</h1>
+      <p>Independent makers across Lebanon, with delivery on selected shops.</p>
+      <a class="kw-btn kw-btn--primary" href="#">Shop new arrivals</a>
+    </div>
+    <div class="kw-slide kw-slide--campaign" data-kw-slide role="group" aria-roledescription="slide" aria-label="2 of 4" aria-hidden="true">
+      <span class="kw-slide__label">Campaign: spring edit</span>
+      <h1 class="">Fresh pieces from this week's makers</h1>
+      <p>Hand-picked by our editors, updated every Monday.</p>
+      <a class="kw-btn kw-btn--primary" href="#">Shop the edit</a>
+    </div>
+    <div class="kw-slide kw-slide--shop" data-kw-slide role="group" aria-roledescription="slide" aria-label="3 of 4" aria-hidden="true">
+      <span class="kw-slide__label">Shop spotlight</span>
+      <h1 class="">Leather goods made in the Bekaa Valley</h1>
+      <p>Atelier Bekaa has 4.9 stars from over 400 buyers.</p>
+      <div class="kw-slide__shop"><div class="kw-slide__avatar" aria-hidden="true">A</div><div><strong>Atelier Bekaa</strong><div class="kw-small">Beirut · Leather goods</div></div></div><a class="kw-btn kw-btn--primary" href="#">Visit Atelier Bekaa</a>
+    </div>
+    <div class="kw-slide kw-slide--category" data-kw-slide role="group" aria-roledescription="slide" aria-label="4 of 4" aria-hidden="true">
+      <span class="kw-slide__label">Category spotlight</span>
+      <h1 class="">Top-rated jewellery makers</h1>
+      <p>Three shops with the best recent ratings in jewellery this month.</p>
+      <a class="kw-btn kw-btn--primary" href="#">Browse jewellery</a>
+    </div>
+    <div class="kw-carousel__controls">
+      <ul class="kw-dots" aria-label="Choose slide"><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 1" aria-current="true"></button></li><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 2" aria-current="false"></button></li><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 3" aria-current="false"></button></li><li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide 4" aria-current="false"></button></li></ul>
+      <div class="kw-carousel__buttons">
+        <button class="kw-carousel__btn kw-carousel__btn--arrow" type="button" data-kw-prev aria-label="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="kw-carousel__btn kw-carousel__pause" type="button" data-kw-pause aria-pressed="false" aria-label="Pause slideshow"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g class="kw-pause-bars"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></g><path class="kw-play-tri" d="M8 5l11 7-11 7z"/></svg></button>
+        <button class="kw-carousel__btn kw-carousel__btn--arrow" type="button" data-kw-next aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+
+    <section class="kw-section" aria-labelledby="deals-title">
+      <div class="kw-section__head"><h2 id="deals-title">Hot deals</h2><a href="#">See all deals</a></div>
+      <p class="kw-muted kw-small" style="margin:-6px 0 14px">Sale prices ordered by discount. Deals end 1 November.</p><ul class="kw-grid"><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Stoneware planter with drainage tray">P</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 24%</span></div>
+    <h3 class="kw-card__title">Stoneware planter with drainage tray</h3>
+    <div class="kw-card__shop">Tellar Ceramics</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (118)</span></div>
+    <div class="kw-card__price"><s>$41.00</s><span class="kw-sale">$31.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Hand-woven wool throw, navy stripe">T</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 25%</span></div>
+    <h3 class="kw-card__title">Hand-woven wool throw, navy stripe</h3>
+    <div class="kw-card__shop">Loom &amp; Thread</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (73)</span></div>
+    <div class="kw-card__price"><s>$96.00</s><span class="kw-sale">$72.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Cedar soap gift box with botanicals">S</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 21%</span></div>
+    <h3 class="kw-card__title">Cedar soap gift box with botanicals</h3>
+    <div class="kw-card__shop">Cedar Gifts Co.</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.7 (651)</span></div>
+    <div class="kw-card__price"><s>$28.00</s><span class="kw-sale">$22.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Personalised birth-year print, A3">P</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-countdown" data-kw-countdown="2026-11-01T23:59:00+02:00">Ends soon</span></div><div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Save 33%</span></div>
+    <h3 class="kw-card__title">Personalised birth-year print, A3</h3>
+    <div class="kw-card__shop">Ink &amp; Paper Co.</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (540)</span></div>
+    <div class="kw-card__price"><s>$42.00</s><span class="kw-sale">$28.00</span></div>
+  </a>
+</li></ul>
+    </section>
+
+    <section class="kw-section" aria-labelledby="popular-title">
+      <div class="kw-section__head"><h2 id="popular-title">Most popular</h2><a href="#">View all</a></div>
+      <ul class="kw-grid"><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Hand-stitched leather journal, A5">B</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Star seller</span></div>
+    <h3 class="kw-card__title">Hand-stitched leather journal, A5</h3>
+    <div class="kw-card__shop">Atelier Bekaa</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (412)</span></div>
+    <div class="kw-card__price"><span class="">$38.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Olive wood cutting board">W</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Free shipping</span></div>
+    <h3 class="kw-card__title">Olive wood cutting board</h3>
+    <div class="kw-card__shop">Jbeil Woodworks</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (188)</span></div>
+    <div class="kw-card__price"><span class="">$52.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Ceramic pour-over coffee set">C</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    
+    <h3 class="kw-card__title">Ceramic pour-over coffee set</h3>
+    <div class="kw-card__shop">Clay &amp; Kiln Studio</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>5.0 (97)</span></div>
+    <div class="kw-card__price"><span class="">$74.50</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Minimal brass wall hook set">F</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    
+    <h3 class="kw-card__title">Minimal brass wall hook set</h3>
+    <div class="kw-card__shop">Forge Lane</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.6 (230)</span></div>
+    <div class="kw-card__price"><span class="">$29.00</span></div>
+  </a>
+</li></ul>
+    </section>
+
+    <section class="kw-section" aria-labelledby="picks-title">
+      <div class="kw-section__head"><h2 id="picks-title">Picked for you</h2><a href="#">Browse all products</a></div>
+      <ul class="kw-chips" aria-label="Quick filters"><li><a class="kw-chip" href="#" aria-current="true">All</a></li><li><a class="kw-chip" href="#">Free shipping</a></li><li><a class="kw-chip" href="#">On sale</a></li><li><a class="kw-chip" href="#">Star sellers</a></li><li><a class="kw-chip" href="#">Under $25</a></li></ul>
+      <div class="kw-pick-toolbar"><span class="kw-results-count">1,284 results</span><div class="kw-pick-toolbar__selects"><label class="kw-visually-hidden" for="kw-pick-cat">Category</label><select id="kw-pick-cat" class="kw-select" data-kw-autosubmit><option>All categories</option><option>Jewellery</option><option>Home &amp; Living</option><option>Art &amp; Prints</option><option>Gifts</option><option>Vintage</option><option>Bags &amp; Leather</option><option>Clothing &amp; Accessories</option><option>Crafts &amp; Supplies</option><option>Wedding</option></select><label class="kw-visually-hidden" for="kw-pick-sort">Sort by</label><select id="kw-pick-sort" class="kw-select" data-kw-autosubmit><option>Relevance</option><option>Price: low to high</option><option>Price: high to low</option><option>Best rated</option><option>Newest</option></select></div></div>
+      <ul class="kw-grid"><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Linen table runner, natural">L</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    
+    <h3 class="kw-card__title">Linen table runner, natural</h3>
+    <div class="kw-card__shop">Loom &amp; Thread</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (96)</span></div>
+    <div class="kw-card__price"><span class="">$34.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Hand-thrown mug, speckled glaze">M</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Star seller</span></div>
+    <h3 class="kw-card__title">Hand-thrown mug, speckled glaze</h3>
+    <div class="kw-card__shop">Clay &amp; Kiln Studio</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (204)</span></div>
+    <div class="kw-card__price"><span class="">$26.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Brass pendant necklace, small">N</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Sale</span></div>
+    <h3 class="kw-card__title">Brass pendant necklace, small</h3>
+    <div class="kw-card__shop">Forge Lane</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.7 (131)</span></div>
+    <div class="kw-card__price"><s>$55.00</s><span class="kw-sale">$44.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Set of four wooden coasters">C</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Free shipping</span></div>
+    <h3 class="kw-card__title">Set of four wooden coasters</h3>
+    <div class="kw-card__shop">Jbeil Woodworks</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (77)</span></div>
+    <div class="kw-card__price"><span class="">$18.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Vintage-style botanical print">V</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    
+    <h3 class="kw-card__title">Vintage-style botanical print</h3>
+    <div class="kw-card__shop">Ink &amp; Paper Co.</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.6 (312)</span></div>
+    <div class="kw-card__price"><span class="">$21.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Soy candle, fig and oak">S</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--sale">Sale</span></div>
+    <h3 class="kw-card__title">Soy candle, fig and oak</h3>
+    <div class="kw-card__shop">Hive &amp; Wick</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (158)</span></div>
+    <div class="kw-card__price"><s>$24.00</s><span class="kw-sale">$19.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Canvas tote with leather handles">T</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--green">Star seller</span></div>
+    <h3 class="kw-card__title">Canvas tote with leather handles</h3>
+    <div class="kw-card__shop">Atelier Bekaa</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.8 (64)</span></div>
+    <div class="kw-card__price"><span class="">$52.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Ceramic dish set, blue and white">D</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    
+    <h3 class="kw-card__title">Ceramic dish set, blue and white</h3>
+    <div class="kw-card__shop">Tellar Ceramics</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span>4.9 (145)</span></div>
+    <div class="kw-card__price"><span class="">$39.00</span></div>
+  </a>
+</li></ul>
+    </section>
+    <section class="kw-section" aria-labelledby="season-title">
+      <div class="kw-section__head"><h2 id="season-title">Best for this season</h2><a href="#">Browse collections</a></div>
+      <ul class="kw-seasons">
+  <li class="kw-season"><a href="#"><span class="kw-season__eyebrow">Autumn</span><h3>Cosy home picks</h3></a></li>
+  <li class="kw-season kw-season--green"><a href="#"><span class="kw-season__eyebrow">Back to school</span><h3>Notebooks and desk tools</h3></a></li>
+  <li class="kw-season kw-season--ink"><a href="#"><span class="kw-season__eyebrow">Holiday</span><h3>Gifts under $40</h3></a></li>
+</ul>
+    </section>
+
+    <section class="kw-section kw-section--more" aria-labelledby="new-title">
+      <div class="kw-section__head"><h2 id="new-title">New arrivals</h2><a href="#">See all new</a></div>
+      <ul class="kw-grid"><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Beeswax candle trio, unscented">B</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
+    <h3 class="kw-card__title">Beeswax candle trio, unscented</h3>
+    <div class="kw-card__shop">Hive &amp; Wick</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
+    <div class="kw-card__price"><span class="">$24.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb" role="img" aria-label="Embroidered linen tote bag">E</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
+    <h3 class="kw-card__title">Embroidered linen tote bag</h3>
+    <div class="kw-card__shop">Loom &amp; Thread</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
+    <div class="kw-card__price"><span class="">$46.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--ink" role="img" aria-label="Enamel pin set, botanical">E</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
+    <h3 class="kw-card__title">Enamel pin set, botanical</h3>
+    <div class="kw-card__shop">Pin &amp; Petal</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
+    <div class="kw-card__price"><span class="">$18.00</span></div>
+  </a>
+</li><li class="kw-card">
+  <div class="kw-card__media">
+    <div class="kw-thumb kw-thumb--green" role="img" aria-label="Walnut serving spoons, pair">W</div>
+    <button class="kw-fav" type="button" aria-pressed="false" aria-label="Add to favourites" data-kw-fav>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.6 2.4 5.5 6.2 5.1c2.1-.2 3.6 1 4.3 2.3.7-1.3 2.2-2.5 4.3-2.3 3.8.4 5.3 4.5 3.7 7.4C19 16.65 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <a class="kw-card__link" href="#">
+    <div class="kw-card__badges"><span class="kw-badge kw-badge--blue">New</span></div>
+    <h3 class="kw-card__title">Walnut serving spoons, pair</h3>
+    <div class="kw-card__shop">Jbeil Woodworks</div>
+    <div class="kw-card__rating"><span class="kw-stars" aria-hidden="true">★★★★★</span><span> </span></div>
+    <div class="kw-card__price"><span class="">$33.00</span></div>
+  </a>
+</li></ul>
+    </section>
+
+    <section class="kw-section kw-section--more" aria-labelledby="shops-title">
+      <div class="kw-section__head"><h2 id="shops-title">Top shops</h2><a href="#">Explore shops</a></div>
+      <ul class="kw-shops"><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">A</div><a class="kw-shopcard__name" href="#">Atelier Bekaa</a><div class="kw-shopcard__meta">Bekaa Valley</div><div class="kw-shopcard__meta">Leather goods, 4.9 rating</div></div></article></li><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">C</div><a class="kw-shopcard__name" href="#">Clay &amp; Kiln Studio</a><div class="kw-shopcard__meta">Beirut</div><div class="kw-shopcard__meta">Handmade ceramics, 5.0 rating</div></div></article></li><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">J</div><a class="kw-shopcard__name" href="#">Jbeil Woodworks</a><div class="kw-shopcard__meta">Jbeil</div><div class="kw-shopcard__meta">Olive wood and walnut, 4.8 rating</div></div></article></li><li><article class="kw-shopcard"><div class="kw-shopcard__banner"></div><div class="kw-shopcard__body"><div class="kw-shopcard__avatar" aria-hidden="true">T</div><a class="kw-shopcard__name" href="#">Tellar Ceramics</a><div class="kw-shopcard__meta">Tripoli</div><div class="kw-shopcard__meta">Stoneware planters, 4.9 rating</div></div></article></li></ul>
+    </section>
+
+    <section class="kw-section kw-section--more" aria-labelledby="gifts-title">
+      <div class="kw-section__head"><h2 id="gifts-title">Gift guides</h2><a href="#">All gift guides</a></div>
+      <ul class="kw-tiles">
+  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">For her</div></a></li>
+  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">For him</div></a></li>
+  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">For kids</div></a></li>
+  <li class="kw-tile"><a href="#"><div class="kw-tile__media"></div><div class="kw-tile__label">Under $25</div></a></li>
+</ul>
+    </section>
+
+    <section class="kw-section kw-section--more" aria-label="Why shop on Kwikby">
+<ul class="kw-trust">
+  <li><span class="kw-trust__icon" aria-hidden="true">✓</span><div><strong>Fast delivery</strong><span class="kw-muted">Free over $40 from selected shops</span></div></li>
+  <li><span class="kw-trust__icon" aria-hidden="true">$</span><div><strong>Pay your way</strong><span class="kw-muted">Cash on delivery or card</span></div></li>
+  <li><span class="kw-trust__icon" aria-hidden="true">↺</span><div><strong>Easy returns</strong><span class="kw-muted">Request a return from your orders</span></div></li>
+  <li><span class="kw-trust__icon" aria-hidden="true">★</span><div><strong>Verified reviews</strong><span class="kw-muted">Only buyers can review a product</span></div></li>
+</ul>
+    </section>
+  <div style="text-align:center"><button class="kw-btn kw-btn--outline kw-more-toggle" type="button" aria-expanded="false" aria-controls="main" data-kw-more>See more sections</button></div>
+
+</main>
+
+<footer class="kw-footer">
+  <div class="kw-container">
+    <div class="kw-footer__grid">
+      <div class="kw-footer__brand">
+        <img src="wwwroot/images/kwikby-logo.png" alt="Kwikby" width="40" height="40">
+        <p>A marketplace for independent makers and small shops in Lebanon.</p>
+        <a class="kw-btn kw-btn--outline kw-small" href="#">Start selling</a>
+      </div>
+      <nav aria-labelledby="f1"><h2 id="f1">Shop</h2><ul><li><a href="#">Categories</a></li><li><a href="#">Gift cards</a></li><li><a href="#">New arrivals</a></li></ul></nav>
+      <nav aria-labelledby="f2"><h2 id="f2">Sell</h2><ul><li><a href="#">Open a shop</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Fees</a></li></ul></nav>
+      <nav aria-labelledby="f3"><h2 id="f3">Help</h2><ul><li><a href="#">Help centre</a></li><li><a href="#">Returns</a></li><li><a href="#">Contact</a></li></ul></nav>
+    </div>
+    <div class="kw-footer__bottom">
+      <span>&copy; 2026 Kwikby. All rights reserved.</span>
+      <span><a href="#">Privacy</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Cookies</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="wwwroot/js/kwikby.js" defer></script>
+</body>
+</html>
