@@ -9,13 +9,13 @@
     var brand = BrandOptions.Value;
     var message = TempData["Message"] as string;
     var messageType = TempData["MessageType"] as string ?? "success";
-    var currentController = (ViewContext.RouteData.Values["controller"] as string ?? string.Empty);
 
-    // UPDATED: Extract the theme resolved globally by the middleware early in the request pipeline
+    // The theme resolved by the tenant middleware for this request (shop storefronts), or the default.
     var resolvedTheme = Context.Items["Tenant_Shop_Theme"] as WebDS_Test.Domain.ShopTheme ?? ThemeCatalog.Default;
 
     var dir = T.IsRightToLeft ? "rtl" : "ltr";
-    var currentPath = Context.Request.Path + Context.Request.QueryString;
+    var isAdmin = User.IsInRole("Admin");
+    var isSignedIn = User.Identity?.IsAuthenticated == true;
 }
 <!DOCTYPE html>
 <html lang="@T.Culture" dir="@dir" data-lang="@T.Culture"
@@ -50,48 +50,30 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <!-- Kwikby design system: loaded last so its header, navigation and home styles take precedence. -->
+    <link rel="stylesheet" href="~/css/kwikby.css" asp-append-version="true" />
 </head>
 <body class="d-flex flex-column min-vh-100">
+    <a class="kw-skip" href="#main">Skip to content</a>
 
-    <!-- Utility top layer link belt ribbon -->
-    <div class="brand-utilitybar">
-        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <div class="d-flex align-items-center">
-                <span class="fw-bold">kwikby Dispatch</span>
-                <span class="utility-divider"></span>
+    <!-- Top bar: language, order tracking, account -->
+    <div class="kw-topbar">
+        <div class="kw-container kw-topbar__inner">
+            <div class="kw-topbar__links">                
                 <a asp-controller="Catalog" asp-action="Index">@T["controller.catalog"]</a>
             </div>
-            <div class="d-flex align-items-center">
-                @if (T.Supported.Count > 1)
-                {
-                    <div class="dropdown">
-                        <a class="dropdown-toggle" href="#" role="button" id="languageMenu"
-                           data-bs-toggle="dropdown" aria-expanded="false"
-                           title="@T["language.label"]" aria-label="@T["language.label"]">
-                            @(T.Supported.FirstOrDefault(l => string.Equals(l.Code, T.Culture, StringComparison.OrdinalIgnoreCase))?.NativeName ?? T.Culture)
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="languageMenu">
-                            @foreach (var language in T.Supported)
-                            {
-                                <li>
-                                    <a class="dropdown-item @(string.Equals(language.Code, T.Culture, StringComparison.OrdinalIgnoreCase) ? "active" : "")"
-                                       href="/set-language?code=@language.Code&amp;returnUrl=@Uri.EscapeDataString(currentPath)">
-                                        @language.NativeName <span class="small opacity-75">@language.Name</span>
-                                    </a>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                    <span class="utility-divider"></span>
-                }
+            <div class="kw-topbar__links">
                 <a asp-controller="Orders" asp-action="Track">@T["controller.track"]</a>
-                <span class="utility-divider"></span>
-                @if (User.Identity?.IsAuthenticated == true)
+                @if (isSignedIn)
                 {
-                    <a asp-controller="Account" asp-action="Profile">@User.Identity.Name</a>
-                    <span class="utility-divider"></span>
+                    @if (isAdmin)
+                    {
+                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">HQ Backoffice</a>
+                    }
+                    <a asp-area="Vendor" asp-controller="Dashboard" asp-action="Index">Vendor Desk</a>
+                    <a asp-controller="Account" asp-action="Profile">@User.Identity!.Name</a>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-link btn-sm p-0 text-white text-decoration-none">@T["controller.signout"]</button>
+                        <button type="submit" class="kw-topbar__button">@T["controller.signout"]</button>
                     </form>
                 }
                 else
@@ -102,56 +84,114 @@
         </div>
     </div>
 
-    <!-- Core Marketplace Branding Search Navigation Bar -->
-    <header class="brand-header py-3">
-        <div class="container">
-            <div class="row align-items-center g-3">
-                <div class="col-6 col-md-3">
-                    <a asp-controller="Home" asp-action="Index" class="brand-wordmark text-decoration-none">
-                        <span class="wordmark-liban">kwik</span><span class="wordmark-post">by</span>
-                    </a>
-                </div>
+    <!-- Header: logo, search with suggestions, shop links, cart -->
+    <header class="kw-header">
+        <div class="kw-container kw-header__bar">
+            <a class="kw-logo" asp-controller="Home" asp-action="Index" aria-label="kwikby home">
+                <img src="~/images/kwikby_logo.png" alt="kwikby" width="132" height="44" />
+            </a>
 
-                <div class="col-12 col-md-6 order-md-2">
-                    <form class="brand-search d-flex position-relative" role="search" asp-controller="Catalog" asp-action="Index" method="get">
-                        <input class="form-control" type="search" name="q" value="@Context.Request.Query["q"]" placeholder="@T["controller.searchLabel"]" autocomplete="off" />
-                        <button class="btn" type="submit" aria-label="Search">
-                            <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" /></svg>
-                        </button>
-                    </form>
-                </div>
+            <form class="kw-search" role="search" asp-controller="Catalog" asp-action="Index" method="get">
+                <label class="kw-visually-hidden" for="kw-q">@T["controller.searchLabel"]</label>
+                <input id="kw-q" class="kw-search__input" type="search" name="q"
+                       value="@Context.Request.Query["q"]" placeholder="@T["controller.searchLabel"]"
+                       autocomplete="off" aria-expanded="false" aria-controls="kw-suggest-list"
+                       data-kw-suggest data-url="@Url.Action("Suggest", "Catalog")" />
+                <ul id="kw-suggest-list" class="kw-suggest" role="listbox"></ul>
+                <button class="kw-search__submit" type="submit" aria-label="Search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+                </button>
+            </form>
 
-                <div class="col-6 col-md-3 order-md-3 text-end">
-                    @await Component.InvokeAsync("CartBadge")
-                </div>
+            <div class="kw-header__actions">
+                <a class="kw-header__link" asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a>
+                <a class="kw-header__link" asp-area="Vendor" asp-controller="Onboarding" asp-action="Register">Sell on kwikby</a>
+                @await Component.InvokeAsync("CartBadge")
             </div>
         </div>
+
+        <!-- Navigation: categories panel and mega menu -->
+        <nav class="kw-nav" aria-label="Main">
+            <div class="kw-container kw-nav__inner">
+                <div class="kw-menu">
+                    <button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="kw-categories" data-kw-menu-trigger>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+                        <span>Categories</span>
+                    </button>
+                    <div id="kw-categories" class="kw-categories" hidden>
+                        @await Component.InvokeAsync("CategoryMenu")
+                        <a class="kw-categories__all" asp-controller="Catalog" asp-action="Index">All categories</a>
+                    </div>
+                </div>
+
+                <ul class="kw-nav__list" aria-label="Browse">
+                    <li class="kw-menu">
+                        <button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-new" data-kw-menu-trigger>
+                            <span>New arrivals</span>
+                            <svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" /></svg>
+                        </button>
+                    </li>
+                    <li class="kw-menu">
+                        <button class="kw-menu__trigger" type="button" aria-expanded="false" aria-controls="mega-deals" data-kw-menu-trigger>
+                            <span>Deals</span>
+                            <svg class="kw-menu__chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" /></svg>
+                        </button>
+                    </li>
+                    <li><a class="kw-nav__link" asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a></li>
+                    <li><a class="kw-nav__link" asp-area="Vendor" asp-controller="Onboarding" asp-action="Register">Sell</a></li>
+                </ul>
+            </div>
+
+            <div id="mega-new" class="kw-mega" hidden>
+                <div class="kw-container kw-mega__inner">
+                    <div>
+                        <h3>Shop new</h3>
+                        <ul>
+                            <li><a class="kw-mega__link kw-mega__link--strong" asp-controller="Catalog" asp-action="Index" asp-route-sort="Newest">Newest first</a></li>
+                            <li><a class="kw-mega__link" asp-controller="Catalog" asp-action="Index" asp-route-sort="BestSelling">Best selling</a></li>
+                            <li><a class="kw-mega__link" asp-controller="Catalog" asp-action="Index" asp-route-sort="TopRated">Top rated</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Shops</h3>
+                        <ul>
+                            <li><a class="kw-mega__link" asp-controller="Shops" asp-action="Index">Browse all shops</a></li>
+                        </ul>
+                    </div>
+                    <div class="kw-promo">
+                        <span class="kw-promo__eyebrow">New on kwikby</span>
+                        <h4>Fresh products from local vendors</h4>
+                        <a class="kw-btn kw-btn--outline kw-small" asp-controller="Catalog" asp-action="Index" asp-route-sort="Newest">Shop new arrivals</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mega-deals" class="kw-mega" hidden>
+                <div class="kw-container kw-mega__inner">
+                    <div>
+                        <h3>Price</h3>
+                        <ul>
+                            <li><a class="kw-mega__link kw-mega__link--strong" asp-controller="Catalog" asp-action="Index" asp-route-sort="PriceLowToHigh">Lowest prices first</a></li>
+                            <li><a class="kw-mega__link" asp-controller="Catalog" asp-action="Index" asp-route-maxPrice="25">Under @(store.CurrencySymbol)25</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Availability</h3>
+                        <ul>
+                            <li><a class="kw-mega__link" asp-controller="Catalog" asp-action="Index" asp-route-inStock="true">In stock now</a></li>
+                        </ul>
+                    </div>
+                    <div class="kw-promo kw-promo--green">
+                        <span class="kw-promo__eyebrow">Deals</span>
+                        <h4>Lowest prices from our vendors</h4>
+                        <a class="kw-btn kw-btn--outline kw-small" asp-controller="Catalog" asp-action="Index" asp-route-sort="PriceLowToHigh">Shop deals</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
     </header>
 
-    <!-- Sub-Level Platform Routing Track Link Rails -->
-    <nav class="brand-nav">
-        <div class="container">
-            <ul class="nav flex-wrap align-items-center">
-                <li class="nav-item">
-                    <a class="nav-link @(currentController == "Catalog" ? "active" : "")" asp-controller="Catalog" asp-action="Index">@T["controller.catalog"]</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a>
-                </li>
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <li class="nav-item"><a class="nav-link" asp-controller="Orders" asp-action="Index">@T["controller.orders"]</a></li>
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <li class="nav-item"><a class="nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">HQ Backoffice</a></li>
-                    }
-                    <li class="nav-item"><a class="nav-link" asp-area="Vendor" asp-controller="Dashboard" asp-action="Index">Vendor Desk</a></li>
-                }
-            </ul>
-        </div>
-    </nav>
-
-    <div class="container mt-3">
+    <div class="kw-container mt-3">
         @if (!string.IsNullOrEmpty(message))
         {
             <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
@@ -161,31 +201,41 @@
         }
     </div>
 
-    <!-- Layout viewport executing frame -->
-    <main role="main" class="flex-grow-1">
-        <div class="container pb-5 mt-4">
-            @RenderBody()
-        </div>
+    <main id="main" class="kw-container kw-main flex-grow-1">
+        @RenderBody()
     </main>
 
-    <footer class="site-footer py-5 mt-auto">
-        <div class="container text-center text-md-start">
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <span class="brand-wordmark mb-2 d-inline-flex">
-                        <span style="color:#fff;">kwik</span><span style="color:var(--brand-accent);">by</span>
-                    </span>
-                    <p class="mt-2 text-white-50">@T["footer.legal"]</p>
+    <footer class="kw-footer">
+        <div class="kw-container">
+            <div class="kw-footer__grid">
+                <div class="kw-footer__brand">
+                    <img src="~/images/kwikby_logo.png" alt="kwikby" width="120" height="40" />
+                    <p>@T["footer.legal"]</p>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <h6>Support Operations</h6>
-                    <p class="text-white-50 mb-0">Questions? Contact support at <a href="mailto:@store.SupportEmail">@store.SupportEmail</a></p>
-                </div>
+                <nav aria-labelledby="ft-shop">
+                    <h2 id="ft-shop">Shop</h2>
+                    <ul>
+                        <li><a asp-controller="Catalog" asp-action="Index">All products</a></li>
+                        <li><a asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a></li>
+                        <li><a asp-controller="Orders" asp-action="Track">@T["controller.track"]</a></li>
+                    </ul>
+                </nav>
+                <nav aria-labelledby="ft-sell">
+                    <h2 id="ft-sell">Sell</h2>
+                    <ul>
+                        <li><a asp-area="Vendor" asp-controller="Onboarding" asp-action="Register">Open a shop</a></li>
+                    </ul>
+                </nav>
+                <nav aria-labelledby="ft-help">
+                    <h2 id="ft-help">Help</h2>
+                    <ul>
+                        <li><a asp-controller="Home" asp-action="Privacy">@T["footer.privacy"]</a></li>
+                        <li>Support: <a href="mailto:@store.SupportEmail">@store.SupportEmail</a></li>
+                    </ul>
+                </nav>
             </div>
-            <hr class="my-4 border-secondary" />
-            <div class="d-flex flex-wrap justify-content-between gap-2 small text-white-50">
+            <div class="kw-footer__bottom">
                 <span>&copy; @DateTime.UtcNow.Year @store.Name. All rights reserved.</span>
-                <a asp-controller="Home" asp-action="Privacy" class="text-white-50">@T["footer.privacy"]</a>
             </div>
         </div>
     </footer>
@@ -193,6 +243,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/kwikby.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

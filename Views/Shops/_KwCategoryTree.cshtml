@@ -1,0 +1,23 @@
+@model IEnumerable<WebDS_Test.Domain.Category>
+@*
+    Recursive list of a shop's categories for the filter sidebar. The current selection
+    (the "category" query value) is marked, and each link keeps the other filters.
+*@
+@{
+    var selected = Context.Request.Query["category"].ToString();
+}
+<ul class="kw-tree">
+    @foreach (var category in Model)
+    {
+        <li>
+            <label class="kw-check">
+                <input type="radio" name="category" value="@category.Slug" checked="@(string.Equals(selected, category.Slug, StringComparison.OrdinalIgnoreCase))" />
+                <span>@category.Name</span>
+            </label>
+            @if (category.Children.Count > 0)
+            {
+                <partial name="_KwCategoryTree" model="category.Children" />
+            }
+        </li>
+    }
+</ul>

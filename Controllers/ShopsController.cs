@@ -44,6 +44,74 @@ public class ShopsController : StoreControllerBase
     }
 
     [HttpGet("shop/{slug}")]
+    // Replace the existing Details method in Controllers/ShopsController.cs with this one.
+    // Only the signature and the ProductQuery are new: price range, stock filter and empty-value cleanup.
+    // Keep the rest of the method (the model, ViewData and return statement) as it is.
+
+    public async Task<IActionResult> Details(
+        string slug,
+        int page = 1,
+        string? q = null,
+        string? category = null,
+        string? brand = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        bool inStock = false,
+        ProductSort sort = ProductSort.Newest,
+        CancellationToken ct = default)
+    {
+        var shop = await _shops.GetBySlugAsync(slug, ct);
+        if (shop is null || shop.Status != ShopStatus.Approved)
+        {
+            return NotFound();
+        }
+
+        await LoadCartBadgeAsync(ct);
+
+        // Empty form fields arrive as "", which should mean "no filter".
+        if (minPrice is { } low && maxPrice is { } high && low > high)
+        {
+            (minPrice, maxPrice) = (high, low);
+        }
+
+        var query = new ProductQuery
+        {
+            ShopId = shop.Id,
+            ShopSlug = shop.Slug,
+            Search = Clean(q),
+            CategorySlug = Clean(category),
+            Brand = Clean(brand),
+            MinPrice = minPrice,
+            MaxPrice = maxPrice,
+            InStockOnly = inStock,
+            Sort = sort,
+            Page = page,
+            PageSize = Settings.ProductsPerPage
+        };
+
+        var results = await Catalog.BrowseAsync(query, ct);
+        var categories = await Catalog.GetCategoryTreeAsync(shop.Id, ct);
+        var theme = _themes.Get(shop.ThemeKey);
+
+        var model = new ShopStorefrontViewModel
+        {
+            Shop = shop,
+            Theme = theme,
+            Results = results,
+            Categories = categories,
+            Brands = await Catalog.GetBrandsAsync(shop.Id, ct),
+            PriceBounds = await Catalog.GetPriceBoundsAsync(shop.Id, ct),
+            Rating = await _reviews.GetShopRatingAsync(shop.Id, ct)
+        };
+
+        ViewData["Title"] = shop.Name;
+
+        return View(model);
+    }
+
+    private static string? Clean(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    /*
     public async Task<IActionResult> Details(string slug, int page = 1, string? q = null, string? category = null, string? brand = null, ProductSort sort = ProductSort.Newest, CancellationToken ct = default)
     {
         var shop = await _shops.GetBySlugAsync(slug, ct);
@@ -88,7 +156,10 @@ public class ShopsController : StoreControllerBase
         ViewData["ShopTheme"] = theme;
         return View(model);
     }
-}
+    */
+
+
+}//StoreCotrollerBase
 
 public sealed class ShopStorefrontViewModel
 {

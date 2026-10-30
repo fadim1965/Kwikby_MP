@@ -11,6 +11,7 @@
     <!-- Cached locally: the machine has no route to nuget.org, so versions are pinned to
          what exists in ~/.nuget/packages. See docs/ECOMMERCE_PLAN.md. -->
     <!-- SQLite is the development store and the source of the one-time import into SQL Server. -->
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="15.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.*">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -48,7 +49,7 @@
     <None Remove="Tests\**" />
   </ItemGroup>
   <ItemGroup>
-    <Content Remove="wwwroot\images\kwikby_logo.png" />
+    <Content Remove="wwwroot\uploads\kwikby_logo.png" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Tests\AuditAndNotificationTests.cs" />
@@ -709,6 +710,10 @@
     <Content Remove="Tests/**" />
     <EmbeddedResource Remove="Tests/**" />
     <None Remove="Tests/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="App_Data\private\shops\" />
+    <Folder Include="wwwroot\uploads\shops\" />
   </ItemGroup>
 
 </Project>

@@ -1,195 +1,182 @@
 @model WebDS_Test.Controllers.ShopStorefrontViewModel
-@using Microsoft.Extensions.Options
-@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
-@inject IOptions<ReviewSettings> ReviewOptions
 @{
+    ViewData["Title"] = Model.Shop.Name;
     var shop = Model.Shop;
-    var theme = Model.Theme;
-    var currency = StoreOptions.Value.CurrencySymbol;
-    ViewData["Title"] = shop.Name;
-
-    // Reputation: the average of every review left against this shop's products, and the accolade
-    // those numbers earn under the configured thresholds.
-    var rating = Model.Rating;
-    var badge = rating.Badge(ReviewOptions.Value);
-
-    // A supplied banner becomes the hero background. The gradient scrim is layered over it so
-    // white hero text stays readable regardless of the photograph.
-    var heroStyle = string.IsNullOrWhiteSpace(shop.BannerUrl)
-        ? null
-        : $"background-image:linear-gradient(115deg,rgba(9,14,24,.78),rgba(9,14,24,.30)),url('{shop.BannerUrl}')";
+    var qs = Context.Request.Query;
+    var results = Model.Results;
+    var totalPages = Math.Max(1, (int)Math.Ceiling(results.TotalCount / (double)results.PageSize));
+    var initial = string.IsNullOrWhiteSpace(shop.Name) ? "?" : shop.Name.Substring(0, 1).ToUpperInvariant();
+    var currentSort = qs["sort"].ToString();
+    var minPriceValue = qs["minPrice"].ToString();
+    var maxPriceValue = qs["maxPrice"].ToString();
+    var brandValue = qs["brand"].ToString();
+    var searchValue = qs["q"].ToString();
+    var inStockChecked = string.Equals(qs["inStock"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
 }
-<div class="container py-4">
 
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">eShop</a></li>
-            <li class="breadcrumb-item"><a asp-controller="Shops" asp-action="Index">Shops</a></li>
-            <li class="breadcrumb-item active" aria-current="page">@shop.Name</li>
-        </ol>
-    </nav>
-
-    <section class="shop-hero @(heroStyle is null ? "" : "has-banner")" style="@heroStyle">
-        <div class="shop-hero-inner">
-            @if (!string.IsNullOrWhiteSpace(shop.LogoUrl))
-            {
-                <img class="shop-hero-logo" src="@shop.LogoUrl" alt="@shop.Name logo" />
-            }
-            <div>
-                <div class="shop-hero-eyebrow">@theme.Name template</div>
-                <h1 class="h2 mb-1">@shop.Name</h1>
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                    @if (rating.HasRatings)
-                    {
-                        <partial name="_Stars" model="@(new StarRating(rating.Average, rating.Count))" />
-                        <span class="shop-hero-meta">
-                            @rating.Average.ToString("0.0") ·
-                            @rating.Count review@(rating.Count == 1 ? string.Empty : "s")
-                        </span>
-                    }
-                    @if (badge != SellerBadge.None)
-                    {
-                        <span class="badge @badge.ToCssClass()">@badge.ToDisplay()</span>
-                    }
-                    @if (shop.IsVerified)
-                    {
-                        <span class="badge text-bg-success">
-                            <i class="bi bi-shield-check"></i> Verified Seller
-                        </span>
-                    }
-                </div>
-                @if (!string.IsNullOrWhiteSpace(shop.Tagline))
+<!-- Storefront header: the same design for every shop -->
+<section class="kw-shop" aria-labelledby="shop-title">
+    <div class="kw-shop__banner" aria-hidden="true"></div>
+    <div class="kw-shop__body">
+        <div class="kw-shop__avatar" aria-hidden="true">@initial</div>
+        <div class="kw-shop__info">
+            <h1 id="shop-title" class="kw-shop__name">@shop.Name</h1>
+            <div class="kw-shop__meta">
+                @if (!string.IsNullOrWhiteSpace(shop.City))
                 {
-                    <p class="shop-hero-tagline">@shop.Tagline</p>
+                    <span>@shop.City</span>
                 }
-                <div class="shop-hero-meta">
-                    @if (!string.IsNullOrWhiteSpace(shop.City))
-                    {
-                        <span>@shop.City@(string.IsNullOrWhiteSpace(shop.Country) ? "" : $", {shop.Country}")</span>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(shop.PickupLocation))
-                    {
-                        <span>Pickup: @shop.PickupLocation</span>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(shop.Website))
-                    {
-                        <a href="@shop.Website" target="_blank" rel="noopener">@shop.Website</a>
-                    }
-                </div>
-                <div class="mt-2">
-                    <a class="btn btn-light btn-sm"
-                       asp-controller="Messages" asp-action="Start" asp-route-shopId="@shop.Id">
-                        Message the shop
-                    </a>
-                    <span class="small ms-2">Questions about stock or delivery? Ask before you buy.</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    @if (!string.IsNullOrWhiteSpace(shop.Description))
-    {
-        <div class="shop-panel p-3 mt-3">
-            <p class="mb-0">@shop.Description</p>
-        </div>
-    }
-
-    <div class="row g-4 mt-1">
-        <aside class="col-lg-3">
-            <div class="shop-panel p-3">
-                <form method="get" asp-action="Details" asp-route-slug="@shop.Slug">
-                    <label class="form-label small text-uppercase fw-bold" for="shopSearch">Search this shop</label>
-                    <div class="input-group input-group-sm mb-3">
-                        <input class="form-control" id="shopSearch" type="search" name="q" value="@Context.Request.Query["q"]" placeholder="Find a product" />
-                        <button class="btn btn-primary" type="submit">Go</button>
-                    </div>
-
-                    @if (Model.Categories.Count > 0)
-                    {
-                        <label class="form-label small text-uppercase fw-bold" for="shopCategory">Department</label>
-                        <select class="form-select form-select-sm mb-3" id="shopCategory" name="category" onchange="this.form.submit()">
-                            <option value="">All departments</option>
-                            @foreach (var category in Model.Categories)
-                            {
-                                <option value="@category.Slug" selected="@(Context.Request.Query["category"] == category.Slug)">@category.Name</option>
-                            }
-                        </select>
-                    }
-
-                    <label class="form-label small text-uppercase fw-bold" for="shopSort">Sort by</label>
-                    <select class="form-select form-select-sm mb-3" id="shopSort" name="sort" onchange="this.form.submit()">
-                        @foreach (var value in Enum.GetValues<ProductSort>())
-                        {
-                            <option value="@value" selected="@(Context.Request.Query["sort"] == value.ToString())">@value.ToDisplay()</option>
-                        }
-                    </select>
-
-                    <button class="btn btn-brand btn-sm w-100" type="submit">Apply</button>
-                </form>
-
-                @if (Model.Brands.Count > 0)
+                @if (Model.Rating.HasRatings)
                 {
-                    <hr />
-                    <div class="small text-uppercase fw-bold mb-2">Brands</div>
-                    <div class="d-flex flex-wrap gap-1">
-                        @foreach (var brand in Model.Brands)
-                        {
-                            <a class="badge text-bg-light border text-decoration-none"
-                               asp-action="Details" asp-route-slug="@shop.Slug" asp-route-brand="@brand">@brand</a>
-                        }
-                    </div>
+                    <span>@Model.Rating.Average.ToString("0.0") rating (@Model.Rating.Count reviews)</span>
+                }
+                else
+                {
+                    <span>No reviews yet</span>
                 }
             </div>
-        </aside>
-
-        <div class="col-lg-9">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                <div>
-                    <span class="shop-theme-flag" title="This shop's chosen template theme">@theme.Name</span>
-                    <span class="text-muted ms-2 small">
-                        @Model.Results.TotalCount product@(Model.Results.TotalCount == 1 ? "" : "s")
-                    </span>
-                </div>
-                @if (shop.IsFeatured)
-                {
-                    <span class="badge text-bg-warning">Featured shop</span>
-                }
-            </div>
-
-            @if (Model.Results.Items.Count == 0)
+            @if (!string.IsNullOrWhiteSpace(shop.Tagline))
             {
-                <div class="shop-panel p-5 text-center text-muted">
-                    <p class="mb-1">This shop has no products matching your search yet.</p>
-                    <a class="btn btn-outline-primary btn-sm" asp-action="Details" asp-route-slug="@shop.Slug">Clear filters</a>
-                </div>
-            }
-            else
-            {
-                <div class="row g-3">
-                    @foreach (var card in Model.Results.Items)
-                    {
-                        <div class="col-6 col-md-4">
-                            <partial name="_ProductCard" model="card" />
-                        </div>
-                    }
-                </div>
-
-                @if (Model.Results.TotalPages > 1)
-                {
-                    <nav class="mt-4" aria-label="Shop pages">
-                        <ul class="pagination">
-                            @for (var p = 1; p <= Model.Results.TotalPages; p++)
-                            {
-                                <li class="page-item @(p == Model.Results.Page ? "active" : "")">
-                                    <a class="page-link" asp-action="Details" asp-route-slug="@shop.Slug"
-                                       asp-route-page="@p" asp-route-q="@Context.Request.Query["q"]"
-                                       asp-route-category="@Context.Request.Query["category"]">@p</a>
-                                </li>
-                            }
-                        </ul>
-                    </nav>
-                }
+                <p class="kw-muted" style="margin:6px 0 0">@shop.Tagline</p>
             }
         </div>
     </div>
+    @if (!string.IsNullOrWhiteSpace(shop.Description))
+    {
+        <p class="kw-muted" style="margin:0;padding:0 24px 22px">@shop.Description</p>
+    }
+</section>
+
+<div class="kw-browse">
+    <!-- Sort & filter: categories, product types (brands) and price come from this shop's products -->
+    <aside class="kw-filters" aria-label="Sort and filter">
+        <h2 class="kw-filters__title">Sort &amp; filter</h2>
+
+        <form id="kw-shop-filters" method="get" asp-controller="Shops" asp-action="Details" asp-route-slug="@shop.Slug">
+            <fieldset class="kw-filter-group">
+                <legend class="kw-filter-group__label">Categories</legend>
+                @if (Model.Categories.Count > 0)
+                {
+                    <label class="kw-check">
+                        <input type="radio" name="category" value="" checked="@string.IsNullOrEmpty(qs["category"].ToString())" />
+                        <span>All in @shop.Name</span>
+                    </label>
+                    <partial name="_KwCategoryTree" model="Model.Categories" />
+                }
+                else
+                {
+                    <p class="kw-muted kw-small">No categories yet</p>
+                }
+            </fieldset>
+
+            <fieldset class="kw-filter-group">
+                <legend class="kw-filter-group__label">Product types</legend>
+                @if (Model.Brands.Count > 0)
+                {
+                    <label class="kw-check">
+                        <input type="radio" name="brand" value="" checked="@string.IsNullOrEmpty(brandValue)" />
+                        <span>All types</span>
+                    </label>
+                    @foreach (var brand in Model.Brands)
+                    {
+                        <label class="kw-check">
+                            <input type="radio" name="brand" value="@brand" checked="@string.Equals(brandValue, brand, StringComparison.OrdinalIgnoreCase)" />
+                            <span>@brand</span>
+                        </label>
+                    }
+                }
+                else
+                {
+                    <p class="kw-muted kw-small">No product types yet</p>
+                }
+            </fieldset>
+
+            <fieldset class="kw-filter-group">
+                <legend class="kw-filter-group__label">Price</legend>
+                <div class="kw-range">
+                    <input class="kw-input" type="number" name="minPrice" min="0" step="0.01"
+                           value="@minPriceValue" placeholder="@(Model.PriceBounds.Min.ToString("0"))" aria-label="From" />
+                    <span class="kw-muted">to</span>
+                    <input class="kw-input" type="number" name="maxPrice" min="0" step="0.01"
+                           value="@maxPriceValue" placeholder="@(Model.PriceBounds.Max.ToString("0"))" aria-label="To" />
+                </div>
+                <button class="kw-btn kw-btn--outline kw-small" type="submit" style="margin-top:10px">Apply price</button>
+            </fieldset>
+
+            <fieldset class="kw-filter-group">
+                <legend class="kw-filter-group__label">Availability</legend>
+                <label class="kw-check">
+                    <input type="checkbox" name="inStock" value="true" checked="@inStockChecked" />
+                    <span>In stock only</span>
+                </label>
+            </fieldset>
+
+            <input type="hidden" name="q" value="@searchValue" />
+        </form>
+    </aside>
+
+    <div>
+        <div class="kw-browse__toolbar">
+            <span class="kw-results-count">@results.TotalCount items</span>
+            <div style="display:flex;align-items:center;gap:10px">
+                <label class="kw-visually-hidden" for="kw-shop-sort" form="kw-shop-filters">Sort by</label>
+                <select id="kw-shop-sort" class="kw-select" name="sort" form="kw-shop-filters" data-kw-autosubmit>
+                    <option value="Newest" selected="@(currentSort == "" || currentSort == "Newest")">Newest</option>
+                    <option value="PriceLowToHigh" selected="@(currentSort == "PriceLowToHigh")">Price: low to high</option>
+                    <option value="PriceHighToLow" selected="@(currentSort == "PriceHighToLow")">Price: high to low</option>
+                    <option value="BestSelling" selected="@(currentSort == "BestSelling")">Best selling</option>
+                    <option value="TopRated" selected="@(currentSort == "TopRated")">Top rated</option>
+                    <option value="NameAscending" selected="@(currentSort == "NameAscending")">Name A to Z</option>
+                </select>
+            </div>
+        </div>
+
+        @if (results.Items.Count == 0)
+        {
+            <div class="kw-empty">
+                <h2>No products match these filters</h2>
+                <p class="kw-muted">Try clearing a filter, or browse all products from this shop.</p>
+                <a class="kw-btn kw-btn--brand" asp-controller="Shops" asp-action="Details" asp-route-slug="@shop.Slug">Clear filters</a>
+            </div>
+        }
+        else
+        {
+            <ul class="kw-grid">
+                @foreach (var card in results.Items)
+                {
+                    <li><partial name="_KwProductCard" model="card" /></li>
+                }
+            </ul>
+        }
+
+        @if (totalPages > 1)
+        {
+            <nav class="kw-pager" aria-label="Pages" style="display:flex;gap:10px;justify-content:center;align-items:center;margin-top:24px">
+                @if (results.Page > 1)
+                {
+                    <a class="kw-btn kw-btn--outline" asp-controller="Shops" asp-action="Details" asp-route-slug="@shop.Slug"
+                       asp-route-page="@(results.Page - 1)" asp-route-category="@qs["category"].ToString()"
+                       asp-route-brand="@brandValue" asp-route-sort="@currentSort" asp-route-q="@searchValue"
+                       asp-route-minPrice="@minPriceValue" asp-route-maxPrice="@maxPriceValue" asp-route-inStock="@(inStockChecked ? "true" : "")">Previous</a>
+                }
+                <span class="kw-muted">Page @results.Page of @totalPages</span>
+                @if (results.Page < totalPages)
+                {
+                    <a class="kw-btn kw-btn--outline" asp-controller="Shops" asp-action="Details" asp-route-slug="@shop.Slug"
+                       asp-route-page="@(results.Page + 1)" asp-route-category="@qs["category"].ToString()"
+                       asp-route-brand="@brandValue" asp-route-sort="@currentSort" asp-route-q="@searchValue"
+                       asp-route-minPrice="@minPriceValue" asp-route-maxPrice="@maxPriceValue" asp-route-inStock="@(inStockChecked ? "true" : "")">Next</a>
+                }
+            </nav>
+        }
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Radio and checkbox filters submit the sidebar form as soon as they change.
+        document.querySelectorAll('#kw-shop-filters input[type="radio"], #kw-shop-filters input[type="checkbox"]').forEach(function (input) {
+            input.addEventListener('change', function () { input.form.submit(); });
+        });
+    </script>
+}

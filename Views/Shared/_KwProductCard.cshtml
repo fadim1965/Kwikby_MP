@@ -1,0 +1,54 @@
+@model WebDS_Test.Services.ProductCard
+@inject WebDS_Test.Services.ICurrencyFormatter Money
+@{
+    var stars = string.Concat(Enumerable.Range(1, 5).Select(i => i <= Model.RoundedStars ? "★" : "☆"));
+}
+<article class="kw-card">
+    <div class="kw-card__media">
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <img src="@Model.ImageUrl" alt="@Model.Name" loading="lazy" />
+        }
+        else
+        {
+            <div class="kw-thumb" role="img" aria-label="@Model.Name">
+                @(Model.Name.Length > 0 ? Model.Name.Substring(0, 1).ToUpperInvariant() : "•")
+            </div>
+        }
+    </div>
+    <a class="kw-card__link" asp-controller="Products" asp-action="Details" asp-route-slug="@Model.Slug">
+        @if (Model.IsOnSale || !Model.InStock || Model.IsFeatured)
+        {
+            <div class="kw-card__badges">
+                @if (Model.IsOnSale)
+                {
+                    <span class="kw-badge kw-badge--sale">-@Model.DiscountPercent%</span>
+                }
+                @if (!Model.InStock)
+                {
+                    <span class="kw-badge">Sold out</span>
+                }
+                @if (Model.IsFeatured)
+                {
+                    <span class="kw-badge kw-badge--blue">Featured</span>
+                }
+            </div>
+        }
+        <h3 class="kw-card__title">@Model.Name</h3>
+        <div class="kw-card__shop">@Model.ShopName</div>
+        @if (Model.HasRating)
+        {
+            <div class="kw-card__rating">
+                <span class="kw-stars" aria-hidden="true">@stars</span>
+                <span>@Model.RatingAverage.ToString("0.0") (@Model.RatingCount)</span>
+            </div>
+        }
+        <div class="kw-card__price">
+            @if (Model.IsOnSale)
+            {
+                <s>@Money.Format(Model.CompareAtPrice)</s>
+            }
+            <span class="@(Model.IsOnSale ? "kw-sale" : "")">@(Model.HasPriceRange ? "From " : "")@Money.Format(Model.Price)</span>
+        </div>
+    </a>
+</article>

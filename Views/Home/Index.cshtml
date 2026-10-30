@@ -1,119 +1,188 @@
 @model WebDS_Test.Controllers.HomeViewModel
 @using Microsoft.Extensions.Options
 @inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@inject WebDS_Test.Services.ICurrencyFormatter Money
 @{
+    ViewData["Title"] = "Home";
     var store = StoreOptions.Value;
+
+    // Only sections backed by real data are shown. Campaign and shop-spotlight slides come from
+    // the hero engine once it is connected; until then the carousel uses live catalogue data.
+    var onSale = Model.Featured.Where(p => p.IsOnSale).Take(8).ToList();
+    var popular = Model.BestSellers.FirstOrDefault();
+    var spotlight = Model.Featured.FirstOrDefault(p => !string.IsNullOrEmpty(p.ShopSlug));
+    var slideCount = 1 + (popular is null ? 0 : 1) + (spotlight is null ? 0 : 1);
+    var slideNo = 1;
 }
 
-<!-- Central Platform Grid Segment -->
-<section class="hero p-4 p-lg-5 mb-5 shadow-sm text-center text-lg-start">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-            <h1 class="display-4 fw-extrabold text-white mb-3" style="letter-spacing: -1px;">⚡ KWIKBY EXPRESS MULTI-VENDOR MARKETPLACE</h1>
-            <p class="lead mb-4 opacity-90 text-light">
-                Get everything you need delivered straight from local verified vendors right to your doorstep in minutes. Clear front-end cataloging with full transparent monitoring.
-            </p>
+<div class="kw-home" id="kw-home-root">
 
-            <!-- In-line Quick Order Tracking Mechanism -->
-            <form asp-controller="Orders" asp-action="Track" method="get" class="d-inline-flex w-100 max-width-md mx-auto ms-lg-0 mb-3 shadow-lg">
-                <input type="text" name="id" placeholder="Enter Order Tracking Number" class="form-control form-control-lg border-0 bg-white" style="border-radius: var(--brand-radius) 0 0 var(--brand-radius); font-size: 15px;" required />
-                <button type="submit" class="btn btn-brand px-4" style="border-radius: 0 var(--brand-radius) var(--brand-radius) 0; white-space: nowrap;">Track Order</button>
-            </form>
+    <!-- Hero carousel -->
+    <section class="kw-carousel" data-kw-carousel aria-roledescription="carousel" aria-label="Featured">
+        <div class="kw-slide kw-slide--campaign is-active" data-kw-slide role="group" aria-roledescription="slide"
+             aria-label="@slideNo of @slideCount" aria-hidden="false">
+            <span class="kw-slide__label">Welcome to kwikby</span>
+            <h1>Find something made and sold by local vendors</h1>
+            <p>Free delivery over @(store.CurrencySymbol)@store.FreeShippingThreshold.ToString("N0") from selected shops. Cash on delivery or card at checkout.</p>
+            <a class="kw-btn kw-btn--primary" asp-controller="Catalog" asp-action="Index">Start shopping</a>
         </div>
 
-        <div class="col-lg-5">
-            <div class="row g-3">
-                <div class="col-6">
-                    <div class="hero-stat p-3 text-center">
-                        <div class="h3 fw-bold text-white mb-1">@Model.Featured.Count</div>
-                        <div class="small text-white-50">Active Vendors</div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="hero-stat p-3 text-center">
-                        <div class="h3 fw-bold text-white mb-1">Free</div>
-                        <div class="small text-white-50">Over @store.CurrencySymbol@store.FreeShippingThreshold.ToString("N0")</div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="hero-stat p-3 text-center">
-                        <div class="h3 fw-bold text-white mb-1">@Model.Categories.Count</div>
-                        <div class="small text-white-50">Departments</div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="hero-stat p-3 text-center">
-                        <div class="h3 fw-bold text-white mb-1">Fast</div>
-                        <div class="small text-white-50">Local Dispatch</div>
-                    </div>
+        @if (popular is not null)
+        {
+            slideNo++;
+            <div class="kw-slide kw-slide--category" data-kw-slide role="group" aria-roledescription="slide"
+                 aria-label="@slideNo of @slideCount" aria-hidden="true">
+                <span class="kw-slide__label">Popular right now</span>
+                <h2>@popular.Name</h2>
+                <p>From @popular.ShopName &middot; @Money.Format(popular.Price)</p>
+                <a class="kw-btn kw-btn--primary" asp-controller="Products" asp-action="Details" asp-route-slug="@popular.Slug">View product</a>
+            </div>
+        }
+
+        @if (spotlight is not null)
+        {
+            slideNo++;
+            <div class="kw-slide kw-slide--shop" data-kw-slide role="group" aria-roledescription="slide"
+                 aria-label="@slideNo of @slideCount" aria-hidden="true">
+                <span class="kw-slide__label">Shop spotlight</span>
+                <h2>@spotlight.ShopName</h2>
+                <p>Browse this shop's products, and read what its buyers say.</p>
+                <a class="kw-btn kw-btn--primary" asp-controller="Shops" asp-action="Details" asp-route-slug="@spotlight.ShopSlug">Visit shop</a>
+            </div>
+        }
+
+        @if (slideCount > 1)
+        {
+            <div class="kw-carousel__controls">
+                <ul class="kw-dots" aria-label="Choose slide">
+                    @for (var i = 1; i <= slideCount; i++)
+                    {
+                        <li><button class="kw-dot" type="button" data-kw-dot aria-label="Show slide @i" aria-current="@(i == 1 ? "true" : "false")"></button></li>
+                    }
+                </ul>
+                <div class="kw-carousel__buttons">
+                    <button class="kw-carousel__btn kw-carousel__btn--arrow" type="button" data-kw-prev aria-label="Previous slide">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+                    </button>
+                    <button class="kw-carousel__btn kw-carousel__pause" type="button" data-kw-pause aria-pressed="false" aria-label="Pause slideshow">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g class="kw-pause-bars"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></g><path class="kw-play-tri" d="M8 5l11 7-11 7z" /></svg>
+                    </button>
+                    <button class="kw-carousel__btn kw-carousel__btn--arrow" type="button" data-kw-next aria-label="Next slide">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+                    </button>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
-
-@if (Model.Categories.Count > 0)
-{
-    <section class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="h4 fw-bold mb-0">🔥 Shop by department</h2>
-            <a class="text-primary fw-semibold small" asp-controller="Catalog" asp-action="Index">See everything &rarr;</a>
-        </div>
-        <div class="row g-3">
-            @foreach (var category in Model.Categories)
-            {
-                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                    <a class="category-tile p-3 d-flex flex-column h-100 text-decoration-none" asp-controller="Catalog" asp-action="Index" asp-route-category="@category.Slug">
-                        <div class="tile-icon p-2 fs-4 fw-bold mb-2 text-center" style="width:45px; height:45px; display:grid; place-items:center;">
-                            @category.Name.Substring(0, 1).ToUpperInvariant()
-                        </div>
-                        <div class="fw-bold text-dark fs-6">@category.Name</div>
-                    </a>
-                </div>
-            }
-        </div>
+        }
     </section>
-}
 
-<section class="mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h4 fw-bold mb-0">🌟 Featured Items from Top Vendors</h2>
-        <a class="text-primary fw-semibold small" asp-controller="Catalog" asp-action="Index">All products</a>
-    </div>
-
-    @if (Model.Featured.Count == 0)
+    @if (Model.Featured.Count == 0 && Model.BestSellers.Count == 0)
     {
-        <div class="alert alert-info border-0 shadow-sm mb-0">
-            No items are published on the marketplace matrix yet.
+        <div class="kw-empty kw-section">
+            <h2>No products are published yet</h2>
+            <p class="kw-muted">Vendors are setting up their shops. Check back soon, or browse the shops.</p>
+            <a class="kw-btn kw-btn--brand" asp-controller="Shops" asp-action="Index">Browse shops</a>
         </div>
     }
-    else
-    {
-        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
-            @foreach (var card in Model.Featured)
-            {
-                <div class="col">
-                    <partial name="_ProductCard" model="card" />
-                </div>
-            }
-        </div>
-    }
-</section>
 
-@if (Model.BestSellers.Count > 0)
-{
-    <section class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="h4 fw-bold mb-0">🏆 Popular right now</h2>
-            <a class="text-primary fw-semibold small" asp-controller="Catalog" asp-action="Index" asp-route-sort="@ProductSort.BestSelling">More best sellers</a>
-        </div>
-        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
-            @foreach (var card in Model.BestSellers)
-            {
-                <div class="col">
-                    <partial name="_ProductCard" model="card" />
+    <!-- Hot deals: products on sale -->
+    @if (onSale.Count > 0)
+    {
+        <section class="kw-section" aria-labelledby="deals-title">
+            <div class="kw-section__head">
+                <h2 id="deals-title">Hot deals</h2>
+                <a asp-controller="Catalog" asp-action="Index" asp-route-sort="PriceLowToHigh">Lowest prices</a>
+            </div>
+            <ul class="kw-grid">
+                @foreach (var card in onSale)
+                {
+                    <li><partial name="_KwProductCard" model="card" /></li>
+                }
+            </ul>
+        </section>
+    }
+
+    <!-- Most popular: best sellers -->
+    @if (Model.BestSellers.Count > 0)
+    {
+        <section class="kw-section" aria-labelledby="popular-title">
+            <div class="kw-section__head">
+                <h2 id="popular-title">Most popular</h2>
+                <a asp-controller="Catalog" asp-action="Index" asp-route-sort="BestSelling">More best sellers</a>
+            </div>
+            <ul class="kw-grid">
+                @foreach (var card in Model.BestSellers)
+                {
+                    <li><partial name="_KwProductCard" model="card" /></li>
+                }
+            </ul>
+        </section>
+    }
+
+    <!-- Picked for you: browse with a department and sort dropdown -->
+    @if (Model.Featured.Count > 0)
+    {
+        <section class="kw-section" aria-labelledby="picks-title">
+            <div class="kw-section__head">
+                <h2 id="picks-title">Picked for you</h2>
+                <a asp-controller="Catalog" asp-action="Index">Browse all products</a>
+            </div>
+
+            <ul class="kw-chips" aria-label="Quick filters">
+                <li><a class="kw-chip" href="@Url.Action("Index", "Catalog")" aria-current="true">All</a></li>
+                <li><a class="kw-chip" asp-controller="Catalog" asp-action="Index" asp-route-inStock="true">In stock</a></li>
+                <li><a class="kw-chip" asp-controller="Catalog" asp-action="Index" asp-route-sort="TopRated">Top rated</a></li>
+                <li><a class="kw-chip" asp-controller="Catalog" asp-action="Index" asp-route-maxPrice="25">Under @(store.CurrencySymbol)25</a></li>
+            </ul>
+
+            <form class="kw-pick-toolbar" asp-controller="Catalog" asp-action="Index" method="get">
+                <span class="kw-results-count">Showing @Model.Featured.Count products</span>
+                <div class="kw-pick-toolbar__selects">
+                    <label class="kw-visually-hidden" for="kw-pick-cat">Department</label>
+                    <select id="kw-pick-cat" name="category" class="kw-select" data-kw-autosubmit>
+                        <option value="">All departments</option>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.Slug">@category.Name</option>
+                        }
+                    </select>
+
+                    <label class="kw-visually-hidden" for="kw-pick-sort">Sort by</label>
+                    <select id="kw-pick-sort" name="sort" class="kw-select" data-kw-autosubmit>
+                        <option value="Newest">Newest</option>
+                        <option value="PriceLowToHigh">Price: low to high</option>
+                        <option value="PriceHighToLow">Price: high to low</option>
+                        <option value="BestSelling">Best selling</option>
+                        <option value="TopRated">Top rated</option>
+                    </select>
                 </div>
-            }
-        </div>
-    </section>
-}
+            </form>
+
+            <ul class="kw-grid">
+                @foreach (var card in Model.Featured)
+                {
+                    <li><partial name="_KwProductCard" model="card" /></li>
+                }
+            </ul>
+        </section>
+    }
+
+    <!-- Trust strip -->
+    <ul class="kw-trust kw-section" aria-label="Why shop on kwikby">
+        <li>
+            <span class="kw-trust__icon" aria-hidden="true">&#10003;</span>
+            <div><strong>Tracked delivery</strong><span class="kw-muted">Follow each order from the warehouse to your door.</span></div>
+        </li>
+        <li>
+            <span class="kw-trust__icon" aria-hidden="true">$</span>
+            <div><strong>Pay your way</strong><span class="kw-muted">Cash on delivery or card at checkout.</span></div>
+        </li>
+        <li>
+            <span class="kw-trust__icon" aria-hidden="true">&#8634;</span>
+            <div><strong>Return requests</strong><span class="kw-muted">Open a return from your order history.</span></div>
+        </li>
+        <li>
+            <span class="kw-trust__icon" aria-hidden="true">&#9733;</span>
+            <div><strong>Verified reviews</strong><span class="kw-muted">Only buyers can review a product.</span></div>
+        </li>
+    </ul>
+</div>

@@ -80,9 +80,30 @@
     /* ---------- search suggestions -------------------------------------- */
 
     /**
+     * The catalogue endpoint returns { products: [{name, slug, price, shop}], categories: [{name, slug}] }.
+     * Convert that into the flat list render() expects, building each link from the slug.
+     */
+    function toItems(data) {
+        if (Array.isArray(data)) {
+            return data;
+        }
+        var items = [];
+        ((data && data.categories) || []).forEach(function (c) {
+            items.push({ type: "Department", name: c.name, url: "/Catalog?category=" + encodeURIComponent(c.slug) });
+        });
+        ((data && data.products) || []).forEach(function (p) {
+            items.push({
+                type: "Product",
+                name: p.shop ? p.name + " · " + p.shop : p.name,
+                url: "/Products/Details?slug=" + encodeURIComponent(p.slug)
+            });
+        });
+        return items;
+    }
+
+    /**
      * Expects the suggest endpoint to return a JSON array of
-     * { type: "Product" | "Shop" | "Category", name: string, url: string }.
-     * Check this against the existing /Catalog/Suggest response and adjust if needed.
+     * { type, name, url }, or the { products, categories } shape the catalogue returns.
      */
     function initSuggest(input) {
         var list = document.getElementById(input.getAttribute("aria-controls") || "");
@@ -163,8 +184,8 @@
                 headers: { "Accept": "application/json" },
                 signal: controller ? controller.signal : undefined
             })
-                .then(function (res) { return res.ok ? res.json() : []; })
-                .then(render)
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (data) { render(toItems(data)); })
                 .catch(function (err) {
                     if (err && err.name !== "AbortError") {
                         close();

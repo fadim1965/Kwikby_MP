@@ -270,7 +270,7 @@ p {
     display: flex;
     align-items: center;
     gap: 16px;
-    height: var(--kw-header-h);
+    min-height: var(--kw-header-h);
 }
 
 .kw-logo {
@@ -280,7 +280,7 @@ p {
 }
 
 .kw-logo img {
-    height: 44px;
+    height: 180px;
     width: auto;
 }
 
@@ -1187,7 +1187,7 @@ p {
         row-gap: 8px;
     }
     .kw-logo img {
-        height: 36px;
+        height: 180px;
     }
     .kw-search {
         order: 3;
@@ -2065,4 +2065,156 @@ p {
     .kw-dot {
         transition: none;
     }
+}
+
+/* ==========================================================================
+   21. Marketplace layout: top bar, main wrapper, footer buttons, empty categories
+   ========================================================================== */
+.kw-topbar {
+    background: var(--kw-blue-darker);
+    color: rgba(255, 255, 255, .92);
+    font-size: .85rem;
+}
+
+.kw-topbar__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 16px;
+    padding-block: 6px;
+}
+
+.kw-topbar__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+}
+
+.kw-topbar a,
+.kw-topbar .dropdown-toggle {
+    color: #fff;
+    text-decoration: none;
+}
+
+.kw-topbar a:hover {
+    text-decoration: underline;
+}
+
+.kw-topbar__button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.kw-topbar__button:hover {
+    text-decoration: underline;
+}
+
+.kw-main {
+    padding-block: 24px 48px;
+}
+
+.kw-categories__empty {
+    padding: 12px 20px;
+    margin: 0;
+    color: var(--kw-ink-subtle);
+    font-size: .92rem;
+}
+
+/* ==========================================================================
+   22. Top bar matches the footer; header grows to fit the 180px logo
+   ========================================================================== */
+.kw-topbar {
+    background: var(--kw-surface-muted);
+    border-bottom: 1px solid var(--kw-border);
+    color: var(--kw-ink);
+}
+
+.kw-topbar a,
+.kw-topbar .dropdown-toggle,
+.kw-topbar__button {
+    color: var(--kw-blue);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.kw-topbar a:hover,
+.kw-topbar__button:hover {
+    color: var(--kw-blue-dark);
+    text-decoration: underline;
+}
+
+.kw-topbar__inner {
+    flex-wrap: nowrap;
+}
+
+.kw-topbar__links {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+    .kw-topbar__inner {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 12px;
+        scrollbar-width: none;
+    }
+    .kw-topbar__inner::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   23. Logo height by breakpoint (proportional to the 180px desktop size)
+   ========================================================================== */
+@media (max-width: 1023px) {
+    .kw-logo img {
+        height: 150px;
+    }
+}
+
+@media (max-width: 767px) {
+    .kw-logo img {
+        height: 130px;
+    }
+}
+
+@media (max-width: 479px) {
+    .kw-logo img {
+        height: 110px;
+    }
+}
+
+/* ==========================================================================
+   24. Shop storefront filters: category tree and pager
+   ========================================================================== */
+.kw-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.kw-tree ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 16px;
+}
+
+.kw-tree > li {
+    padding: 2px 0;
+}
+
+.kw-tree .kw-check {
+    padding: 4px 0;
+}
+
+.kw-tree input[type="radio"] {
+    accent-color: var(--kw-green);
 }

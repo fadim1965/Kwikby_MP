@@ -1,0 +1,1 @@
+@inject WebDS_Test.Services.ICurrencyFormatter Money
