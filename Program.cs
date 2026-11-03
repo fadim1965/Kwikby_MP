@@ -74,6 +74,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
 });
 
+// Health checks: DB connectivity (and a liveness endpoint for orchestrators).
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>("database", tags: new[] { "db", "ready" });
+
+// Production secret guard: fail fast if the dev webhook secret is still in use.
+var webhookSecret = builder.Configuration["Payments:WebhookSecret"];
+if (builder.Environment.IsProduction() &&
+    (string.IsNullOrWhiteSpace(webhookSecret) || webhookSecret.Trim().Length < 16))
+{
+    throw new InvalidOperationException(
+        "Payments:WebhookSecret must be set to a real provider secret (at least 16 characters) in Production. " +
+        "Configure it via appsettings.Local.json or environment variables.");
+}
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -334,6 +348,21 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/" + imageOptions.RequestPath.Trim('/', '\\', ' ')
 });
 
+// Security headers (defence in depth).
+app.Use(async (ctx, next) =>
+{
+    var h = ctx.Response.Headers;
+    h["X-Content-Type-Options"] = "nosniff";
+    h["X-Frame-Options"] = "SAMEORIGIN";
+    h["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    h["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
+    if (ctx.Request.IsHttps)
+    {
+        h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    }
+    await next();
+});
+
 app.UseRouting();
 app.UseSession();
 
@@ -350,6 +379,31 @@ if (rateLimits.Enabled)
 
 app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Liveness: process is up (no dependency checks). Readiness: dependencies reachable.
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+// Health endpoint for orchestrators/load balancers (back-compat alias for /health/ready).
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (ctx, report) =>
+    {
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(e => new { name = e.Key, status = e.Value.Status.ToString() })
+            }));
+    }
+});
 
 // ---------------------------------------------------------------------------
 // Runtime Relational Storage Bootstrapper

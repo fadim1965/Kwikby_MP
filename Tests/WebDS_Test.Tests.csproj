@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WebDS_Test.csproj" />
+    <ProjectReference Include="..\Kwikby_MP.csproj" />
     <!-- The application is ASP.NET Core MVC; a few of its contracts (IFormFile and friends) come
          from the shared framework, so the test host needs it too. No NuGet package is involved. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
