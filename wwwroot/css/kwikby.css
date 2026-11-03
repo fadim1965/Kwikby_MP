@@ -280,7 +280,7 @@ p {
 }
 
 .kw-logo img {
-    height: 180px;
+    height: 44px;
     width: auto;
 }
 
@@ -1187,7 +1187,7 @@ p {
         row-gap: 8px;
     }
     .kw-logo img {
-        height: 180px;
+        height: 36px;
     }
     .kw-search {
         order: 3;
@@ -2128,7 +2128,7 @@ p {
 }
 
 /* ==========================================================================
-   22. Top bar matches the footer; header grows to fit the 180px logo
+   22. Top bar matches the footer
    ========================================================================== */
 .kw-topbar {
     background: var(--kw-surface-muted);
@@ -2168,27 +2168,6 @@ p {
     }
     .kw-topbar__inner::-webkit-scrollbar {
         display: none;
-    }
-}
-
-/* ==========================================================================
-   23. Logo height by breakpoint (proportional to the 180px desktop size)
-   ========================================================================== */
-@media (max-width: 1023px) {
-    .kw-logo img {
-        height: 150px;
-    }
-}
-
-@media (max-width: 767px) {
-    .kw-logo img {
-        height: 130px;
-    }
-}
-
-@media (max-width: 479px) {
-    .kw-logo img {
-        height: 110px;
     }
 }
 

@@ -59,7 +59,7 @@
     <!-- Top bar: language, order tracking, account -->
     <div class="kw-topbar">
         <div class="kw-container kw-topbar__inner">
-            <div class="kw-topbar__links">                
+            <div class="kw-topbar__links">
                 <a asp-controller="Catalog" asp-action="Index">@T["controller.catalog"]</a>
             </div>
             <div class="kw-topbar__links">
@@ -104,7 +104,6 @@
             </form>
 
             <div class="kw-header__actions">
-                <a class="kw-header__link" asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a>
                 <a class="kw-header__link" asp-area="Vendor" asp-controller="Onboarding" asp-action="Register">Sell on kwikby</a>
                 @await Component.InvokeAsync("CartBadge")
             </div>
@@ -138,7 +137,6 @@
                         </button>
                     </li>
                     <li><a class="kw-nav__link" asp-controller="Shops" asp-action="Index">@T["controller.shops"]</a></li>
-                    <li><a class="kw-nav__link" asp-area="Vendor" asp-controller="Onboarding" asp-action="Register">Sell</a></li>
                 </ul>
             </div>
 
