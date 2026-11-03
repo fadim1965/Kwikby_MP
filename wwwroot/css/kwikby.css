@@ -17,12 +17,10 @@
     --kw-blue-darker: #1a3360;
     --kw-blue-light: #4f7fc0;
     --kw-blue-tint: #e8effa;
-
     --kw-green: #3baf29;
     --kw-green-dark: #2f8f20;
     --kw-green-light: #6cc95a;
     --kw-green-tint: #e9f7e4;
-
     /* Neutrals */
     --kw-ink: #1f2a37;
     --kw-ink-muted: #4b5563;
@@ -32,14 +30,12 @@
     --kw-surface-raised: #eef1f5;
     --kw-border: #e3e7ee;
     --kw-border-strong: #cfd6e0;
-
     /* Status */
     --kw-star: #f5a623;
     --kw-danger: #d64545;
     --kw-danger-tint: #fdecec;
     --kw-warning: #b7791f;
     --kw-warning-tint: #fdf6e3;
-
     /* Shape and depth */
     --kw-radius-sm: 6px;
     --kw-radius: 10px;
@@ -47,12 +43,12 @@
     --kw-shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
     --kw-shadow: 0 2px 8px rgba(15, 23, 42, .08);
     --kw-shadow-lg: 0 10px 30px rgba(15, 23, 42, .14);
-
+    --kw-mega-shadow-lg: 0 10px 30px rgba(0, 0, 0, .8);
+    
     /* Type */
     --kw-font: "Inter", "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
     --kw-font-size: 15px;
     --kw-line: 1.5;
-
     /* Layout */
     --kw-container: 1280px;
     --kw-header-h: 72px;
@@ -1389,7 +1385,7 @@ p {
     background: var(--kw-surface);
     border-top: 1px solid var(--kw-border);
     border-bottom: 1px solid var(--kw-border);
-    box-shadow: var(--kw-shadow-lg);
+    box-shadow: var(--kw-mega-shadow-lg);
 }
 
 .kw-mega[hidden] {
