@@ -34,7 +34,7 @@ public class DashboardController : Controller
         if (access is null) return Forbid();
 
         var dashboard = await _shops.GetDashboardAsync(shop.Id, ct);
-        ViewData["Title"] = "Vendor dashboard";
+        ViewData["Title"] = "Dashboard";
         ViewData["Shop"] = shop;
         // Threads waiting on an answer, shown as a pill on the dashboard's Messages button.
         ViewData["UnreadMessages"] = await _conversations.CountUnreadForShopAsync(shop.Id, ct);

@@ -163,7 +163,7 @@ public sealed class CartService : ICartService
             return CartResult.Fail("That shop is no longer offering this product.");
         }
 
-        if (listing.StockQuantity <= 0)
+        if (variant.StockQuantity <= 0)
         {
             return CartResult.Fail($"'{product.Name}' is out of stock.");
         }
@@ -193,13 +193,13 @@ public sealed class CartService : ICartService
         var originalQuantity = existing?.Quantity ?? 0;
         var desired = originalQuantity + quantity;
 
-        if (desired > listing.StockQuantity)
+        if (desired > variant.StockQuantity)
         {
-            desired = listing.StockQuantity;
-            if (existing is not null && existing.Quantity >= listing.StockQuantity)
+            desired = variant.StockQuantity;
+            if (existing is not null && existing.Quantity >= variant.StockQuantity)
             {
                 return CartResult.Fail(
-                    $"Only {listing.StockQuantity} of '{product.Name}' are in stock, and your cart already has them all.");
+                    $"Only {variant.StockQuantity} of '{product.Name}' are in stock, and your cart already has them all.");
             }
         }
 
@@ -249,10 +249,8 @@ public sealed class CartService : ICartService
             return await RemoveItemAsync(cartItemId, ct);
         }
 
-        // Available stock comes from the shop's listing, which is what the shop actually holds.
-        var stock = item.ProductVariant?.Product?.Listings.FirstOrDefault(l => l.IsActive)?.StockQuantity
-                    ?? item.ProductVariant?.StockQuantity
-                    ?? 0;
+        // Available stock is the variant's own count, the same figure checkout validates against.
+        var stock = item.ProductVariant?.StockQuantity ?? 0;
 
         if (quantity > stock)
         {

@@ -280,7 +280,7 @@ p {
 }
 
 .kw-logo img {
-    height: 44px;
+    height: 135px;
     width: auto;
 }
 
@@ -1062,9 +1062,9 @@ p {
 }
 
 .kw-footer__brand img {
-    height: 40px;
+    height: 90px;
     width: auto;
-    background: #fff;
+    /*background: #fff;*/
     border-radius: var(--kw-radius-sm);
     padding: 4px 8px;
     margin-bottom: 12px;
@@ -1187,7 +1187,7 @@ p {
         row-gap: 8px;
     }
     .kw-logo img {
-        height: 36px;
+        height: 90px;
     }
     .kw-search {
         order: 3;

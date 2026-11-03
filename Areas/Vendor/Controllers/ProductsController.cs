@@ -470,8 +470,8 @@ public class ProductsController : Controller
             url => Db.ProductImages.AnyAsync(i => i.Url == url, ct),
             ct);
 
-        // Ensure the product is sellable: give the owning shop a listing that mirrors the cheapest
-        // variant price and the aggregate stock, so cart and checkout can resolve price and stock.
+        // Ensure the product is sellable, and that the shop's listing total matches its variants.
+        // Variant stock is the source of truth; the listing's stock is recalculated from it on every save.
         if (product.ShopId != 0)
         {
             var listing = await Db.ShopListings.FirstOrDefaultAsync(
@@ -480,18 +480,20 @@ public class ProductsController : Controller
             {
                 var cheapest = product.Variants.Where(v => v.IsActive).Select(v => (decimal?)v.Price).Min()
                                ?? product.Variants.FirstOrDefault()?.Price;
-                var stock = product.Variants.Where(v => v.IsActive).Sum(v => v.StockQuantity);
-                Db.ShopListings.Add(new ShopListing
+                listing = new ShopListing
                 {
                     ShopId = product.ShopId,
                     ProductId = product.Id,
                     Price = cheapest,
-                    StockQuantity = stock > 0 ? stock : product.Variants.Sum(v => v.StockQuantity),
                     IsActive = true,
                     UpdatedUtc = DateTime.UtcNow
-                });
-                await Db.SaveChangesAsync(ct);
+                };
+                Db.ShopListings.Add(listing);
             }
+
+            listing.StockQuantity = StockSync.ProductStock(product);
+            listing.UpdatedUtc = DateTime.UtcNow;
+            await Db.SaveChangesAsync(ct);
         }
 
         _logger.LogInformation("Saved product {ProductId} ({Name})", product.Id, product.Name);

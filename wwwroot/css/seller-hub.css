@@ -1,0 +1,95 @@
+/* ==========================================================================
+   seller-hub.css — the Seller Hub shell.
+   Reuses the HQ Backoffice sidebar/components (admin-sidebar.css) and only
+   re-colours the rail for the seller workspace.
+   ========================================================================== */
+
+.seller-hub {
+    --sidebar-bg: #0e3464;
+    --sidebar-bg-hover: rgba(255, 255, 255, 0.10);
+    --sidebar-bg-active: rgba(255, 255, 255, 0.16);
+    --sidebar-text: #ffffff;
+    --sidebar-text-muted: rgba(255, 255, 255, 0.66);
+    --sidebar-border: rgba(255, 255, 255, 0.14);
+    --sidebar-accent: #ffffff;
+    --sidebar-accent-hover: #ffffff;
+}
+
+.seller-hub .admin-sidebar {
+    background: #0e3464;
+}
+
+/* Shop identity at the top of the rail. */
+.seller-hub .seller-brand {
+    min-width: 0;
+}
+
+.seller-hub .seller-brand .brand-icon {
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+}
+
+.seller-hub .seller-brand .brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.seller-hub .seller-brand-name {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.seller-hub .seller-brand-tag {
+    color: var(--sidebar-text-muted);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+}
+
+/* White text throughout the rail, including hover and active states. */
+.seller-hub .nav-link,
+.seller-hub .nav-link:hover,
+.seller-hub .nav-link.active,
+.seller-hub .storefront-link,
+.seller-hub .storefront-link:hover {
+    color: #ffffff;
+}
+
+.seller-hub .nav-link.active {
+    background: var(--sidebar-bg-active);
+}
+
+.seller-hub .nav-link::before {
+    background: #ffffff;
+}
+
+.seller-hub .storefront-link:hover {
+    background: var(--sidebar-bg-active);
+}
+
+.seller-hub .nav-link .badge {
+    font-size: 0.68rem;
+}
+
+/* Vendor pages still carry their own .container wrapper. Inside the admin
+   shell it would double the gutters — let .admin-content own the spacing. */
+.seller-hub .admin-content > .container {
+    max-width: 100%;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* The mobile toggle lives in the topbar so it can open the closed rail. */
+.seller-hub .admin-topbar .sidebar-toggle {
+    margin-right: 0.25rem;
+}

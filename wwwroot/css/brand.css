@@ -234,6 +234,19 @@ hr {
     background-color: var(--brand-surface);
     box-shadow: var(--brand-shadow);
 }
+    .card.login {
+        border-radius: var(--brand-radius);
+        border: 1px solid #003b83;
+        background-color: var(--brand-surface);
+        box-shadow: var(--brand-shadow);
+        rgb(152 195 248)
+    }
+        .card.login input, select {
+            border-radius: var(--brand-radius);
+            border: 1px solid rgb(152 195 248);
+            background-color: var(--brand-surface);
+            box-shadow: var(--brand-shadow);
+        }
 
 .card-header {
     background-color: var(--brand-surface-raised);

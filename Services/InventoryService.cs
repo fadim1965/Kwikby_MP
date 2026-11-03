@@ -59,6 +59,12 @@ public sealed class InventoryService : IInventoryService
 
         variant.StockQuantity = updated;
 
+        // Variant stock is the source of truth; the listing total follows it in the same save.
+        if (variant.Product is not null)
+        {
+            await StockSync.RefreshListingsAsync(_db, variant.Product, DateTime.UtcNow, ct);
+        }
+
         _db.StockMovements.Add(new StockMovement
         {
             ProductVariantId = variant.Id,

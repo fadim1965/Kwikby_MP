@@ -93,11 +93,12 @@ public sealed class OrderService : IOrderService
                 return OrderResult.Fail($"'{product.Name}' is no longer offered by this shop.");
             }
 
-            if (listing.StockQuantity < item.Quantity)
+            // Stock is held per variant (the real per-option count); the listing total follows it.
+            if (variant.StockQuantity < item.Quantity)
             {
-                return OrderResult.Fail(listing.StockQuantity <= 0
+                return OrderResult.Fail(variant.StockQuantity <= 0
                     ? $"'{product.Name}' just sold out. Please remove it from your cart."
-                    : $"Only {listing.StockQuantity} × '{product.Name}' remain. Please reduce the quantity.");
+                    : $"Only {variant.StockQuantity} × '{product.Name}' remain. Please reduce the quantity.");
             }
         }
 
@@ -249,16 +250,15 @@ public sealed class OrderService : IOrderService
                     foreach (var item in items)
                     {
                         var variant = item.ProductVariant!;
-                        var listing = variant.Product!.Listings.First(l => l.IsActive);
-
-                        listing.StockQuantity -= item.Quantity;
-                        listing.UpdatedUtc = DateTime.UtcNow;
+                        // The variant is the stock that is sold; its row version guards concurrent sales.
+                        variant.StockQuantity -= item.Quantity;
+                        await StockSync.RefreshListingsAsync(_db, variant.Product!, DateTime.UtcNow);
 
                         _db.StockMovements.Add(new StockMovement
                         {
                             ProductVariantId = variant.Id,
                             QuantityDelta = -item.Quantity,
-                            StockAfter = listing.StockQuantity,
+                            StockAfter = variant.StockQuantity,
                             Reason = StockMovementReason.Sale,
                             // The order is recorded by id as well as by note so reports can name it
                             // without depending on the note's formatting.
@@ -468,26 +468,13 @@ public sealed class OrderService : IOrderService
                     {
                         var variant = line.ProductVariant!;
 
-                        // Stock is held on the shop's listing — the same pool the sale committed
-                        // from. Only when the product is no longer listed (its listing pool is
-                        // gone) does the variant's legacy stock figure take the units back, which
-                        // keeps the movement meaningful for a product that is still sellable
-                        // somewhere rather than silently dropping them.
-                        var listing = variant.Product?.Listings
-                            .FirstOrDefault(l => l.IsActive && l.ShopId == order.ShopId);
-
-                        int stockAfter;
-                        if (listing is not null)
+                        // Put the units back on the variant, then refresh the listing total.
+                        variant.StockQuantity += line.Quantity;
+                        if (variant.Product is not null)
                         {
-                            listing.StockQuantity += line.Quantity;
-                            listing.UpdatedUtc = now;
-                            stockAfter = listing.StockQuantity;
+                            await StockSync.RefreshListingsAsync(_db, variant.Product, now);
                         }
-                        else
-                        {
-                            variant.StockQuantity += line.Quantity;
-                            stockAfter = variant.StockQuantity;
-                        }
+                        var stockAfter = variant.StockQuantity;
 
                         _db.StockMovements.Add(new StockMovement
                         {

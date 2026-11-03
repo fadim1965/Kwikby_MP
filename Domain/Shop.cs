@@ -294,7 +294,10 @@ public class ShopListing
     /// <summary>Optional promotional "was" price for this shop.</summary>
     public decimal? CompareAtPrice { get; set; }
 
-    /// <summary>Stock this shop holds. Independent of every other shop's stock.</summary>
+    /// <summary>
+    /// Derived: the total of the product's active variant stock. Maintained by StockSync.RefreshListingsAsync
+    /// whenever variant stock changes. Do not set this directly; change the variants instead.
+    /// </summary>
     public int StockQuantity { get; set; }
 
     /// <summary>Below this level the vendor dashboard flags the listing.</summary>

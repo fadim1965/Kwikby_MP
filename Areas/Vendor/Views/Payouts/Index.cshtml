@@ -11,14 +11,6 @@
             <h1 class="h3 mb-1">Payouts</h1>
             <p class="text-muted mb-0">What @Model.Shop.Name is owed, and what has been settled.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Products" asp-action="Index">Products</a>
-            @if (canEditBank)
-            {
-                <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Team" asp-action="Index">Team</a>
-            }
-        </div>
     </div>
 
     <div class="row g-3 mt-3">

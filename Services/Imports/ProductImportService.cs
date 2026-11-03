@@ -302,6 +302,27 @@ public sealed class ProductImportService : IProductImportService
                 variant.StockQuantity = row.StockQuantity;
             }
 
+            // Variant stock is the source of truth. The shop needs an active listing for the product
+            // (cart and checkout require one), and its total is recalculated from the variants.
+            if (product.Id != 0)
+            {
+                var listingsEntry = _db.Entry(product).Collection(p => p.Listings);
+                if (!listingsEntry.IsLoaded)
+                {
+                    await listingsEntry.LoadAsync(ct);
+                }
+            }
+            if (!product.Listings.Any(l => l.ShopId == shopId && l.IsActive))
+            {
+                product.Listings.Add(new ShopListing
+                {
+                    ShopId = shopId,
+                    IsActive = true,
+                    UpdatedUtc = DateTime.UtcNow
+                });
+            }
+            await StockSync.RefreshListingsAsync(_db, product, DateTime.UtcNow, ct);
+
             // Images: replace the gallery only when the file actually supplied some, so an
             // import that omits the column cannot silently wipe a product's photographs.
             if (row.Images.Count > 0)

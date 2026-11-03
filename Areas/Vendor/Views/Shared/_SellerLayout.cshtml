@@ -1,0 +1,230 @@
+@using Microsoft.Extensions.Options
+@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@inject IOptions<WebDS_Test.Domain.BrandingOptions> BrandOptions
+@inject WebDS_Test.Services.IShopService Shops
+@inject WebDS_Test.Services.IConversationService Conversations
+@{
+    var store = StoreOptions.Value;
+    var brand = BrandOptions.Value;
+    var message = TempData["Message"] as string;
+    var messageType = TempData["MessageType"] as string ?? "success";
+
+    var controller = (ViewContext.RouteData.Values["controller"] as string ?? string.Empty).ToLowerInvariant();
+    var action = (ViewContext.RouteData.Values["action"] as string ?? string.Empty).ToLowerInvariant();
+
+    string Active(string name) => controller == name.ToLowerInvariant() ? "active" : string.Empty;
+    string ActiveAction(string name, string act) =>
+        controller == name.ToLowerInvariant() && action == act.ToLowerInvariant() ? "active" : string.Empty;
+
+    // The layout resolves the seller's shop once so the sidebar can carry the shop name and only
+    // offer the sections the signed-in colleague is allowed to use.
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var shop = userId is null ? null : await Shops.GetPrimaryShopForUserAsync(userId);
+    var access = shop is null || userId is null ? null : await Shops.ResolveAccessAsync(userId, shop.Id);
+
+    var shopName = shop?.Name ?? "Seller Hub";
+    var unread = shop is null ? 0 : await Conversations.CountUnreadForShopAsync(shop.Id);
+
+    var canManageSettings = access?.CanManageSettings == true;
+    var canViewFinancials = access?.CanViewFinancials() == true;
+    var canManageTeam = access?.CanManageTeam() == true;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] is null ? "Seller Hub" : $"{ViewData["Title"]} · Seller Hub") · @shopName</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0e3464" />
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>:root{@Html.Raw(brand.ToCssVariables())}</style>
+    <link rel="stylesheet" href="~/css/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-sidebar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/seller-hub.css" asp-append-version="true" />
+</head>
+<body class="seller-hub">
+    <div class="admin-wrapper">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <a class="sidebar-brand seller-brand" asp-area="Vendor" asp-controller="Dashboard" asp-action="Index" title="@shopName">
+                    <span class="brand-icon"><i class="bi bi-shop"></i></span>
+                    <span class="brand-text">
+                        <span class="seller-brand-name">@shopName</span>
+                        <span class="seller-brand-tag">Seller Hub</span>
+                    </span>
+                </a>
+                <button class="sidebar-toggle d-lg-none" type="button" aria-label="Close navigation" onclick="toggleSidebar()">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a class="nav-link @Active("Dashboard")" asp-area="Vendor" asp-controller="Dashboard" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Catalogue</div>
+                    <a class="nav-link @Active("Products")" asp-area="Vendor" asp-controller="Products" asp-action="Index">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Products</span>
+                    </a>
+                    @if (canManageSettings)
+                    {
+                        <a class="nav-link @Active("Appearance")" asp-area="Vendor" asp-controller="Appearance" asp-action="Index">
+                            <i class="bi bi-palette"></i>
+                            <span>Appearance</span>
+                        </a>
+                    }
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Sales</div>
+                    <a class="nav-link @Active("Orders")" asp-area="Vendor" asp-controller="Orders" asp-action="Index">
+                        <i class="bi bi-receipt"></i>
+                        <span>Orders</span>
+                    </a>
+                    <a class="nav-link @Active("Returns")" asp-area="Vendor" asp-controller="Returns" asp-action="Index">
+                        <i class="bi bi-arrow-return-left"></i>
+                        <span>Returns</span>
+                    </a>
+                    <a class="nav-link @ActiveAction("PostSale", "Index")" asp-area="Vendor" asp-controller="PostSale" asp-action="Index">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>After-sales</span>
+                    </a>
+                    <a class="nav-link @ActiveAction("PostSale", "Fulfilments")" asp-area="Vendor" asp-controller="PostSale" asp-action="Fulfilments">
+                        <i class="bi bi-box-seam-fill"></i>
+                        <span>Packages &amp; labels</span>
+                    </a>
+                    <a class="nav-link @Active("Messages")" asp-area="Vendor" asp-controller="Messages" asp-action="Index">
+                        <i class="bi bi-chat-dots"></i>
+                        <span>Messages</span>
+                        @if (unread > 0)
+                        {
+                            <span class="badge rounded-pill text-bg-danger ms-auto">@unread</span>
+                        }
+                    </a>
+                    <a class="nav-link @Active("Reviews")" asp-area="Vendor" asp-controller="Reviews" asp-action="Index">
+                        <i class="bi bi-star"></i>
+                        <span>Reviews</span>
+                    </a>
+                </div>
+
+                @if (canViewFinancials)
+                {
+                    <div class="nav-section">
+                        <div class="nav-section-title">Money</div>
+                        <a class="nav-link @Active("Payouts")" asp-area="Vendor" asp-controller="Payouts" asp-action="Index">
+                            <i class="bi bi-cash-stack"></i>
+                            <span>Payouts</span>
+                        </a>
+                        <a class="nav-link @Active("Reports")" asp-area="Vendor" asp-controller="Reports" asp-action="Index">
+                            <i class="bi bi-bar-chart"></i>
+                            <span>Reports</span>
+                        </a>
+                    </div>
+                }
+
+                @if (canManageTeam)
+                {
+                    <div class="nav-section">
+                        <div class="nav-section-title">Shop</div>
+                        <a class="nav-link @Active("Team")" asp-area="Vendor" asp-controller="Team" asp-action="Index">
+                            <i class="bi bi-people"></i>
+                            <span>Team</span>
+                        </a>
+                    </div>
+                }
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-divider"></div>
+                @if (shop is not null)
+                {
+                    <a class="nav-link storefront-link"
+                       href="@Url.Action("Details", "Shops", new { area = "", slug = shop.Slug })"
+                       target="_blank" rel="noopener">
+                        <i class="bi bi-shop-window"></i>
+                        <span>View storefront</span>
+                        <i class="bi bi-box-arrow-up-right ms-auto"></i>
+                    </a>
+                }
+                <a class="nav-link storefront-link mt-2" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-globe"></i>
+                    <span>Back to eShop</span>
+                </a>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="mt-2">
+                    <button type="submit" class="nav-link logout-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Sign out</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="sidebar-overlay d-lg-none" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <div class="admin-main">
+            <header class="admin-topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" type="button" aria-label="Open navigation" onclick="toggleSidebar()">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="page-title">@ViewData["Title"]</h1>
+                    <span class="user-badge">@User.Identity?.Name</span>
+                </div>
+                <div class="topbar-right d-flex align-items-center gap-2">
+                    <a class="btn btn-outline-primary btn-sm" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-arrow-left"></i> Back to eShop
+                    </a>
+                </div>
+            </header>
+
+            <main class="admin-content">
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+                        @message
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        // Close the off-canvas sidebar after choosing a destination on small screens.
+        document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 992) {
+                    toggleSidebar();
+                }
+            });
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

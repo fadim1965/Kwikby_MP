@@ -413,24 +413,13 @@ public sealed class ReturnService : IReturnService
                 continue;
             }
 
-            // Stock is held on the shop's listing — the same pool checkout committed. When the
-            // listing no longer carries stock (an unlisted product), the variant's legacy pool
-            // receives it, which is where a cancellation restock goes for the same reason.
-            var listing = variant.Product?.Listings
-                .FirstOrDefault(l => l.IsActive && l.ShopId == request.ShopId);
-
-            int stockAfter;
-            if (listing is not null)
+            // Returned units go back on the variant (the real per-option count); the listing total follows.
+            variant.StockQuantity += line.Quantity;
+            if (variant.Product is not null)
             {
-                listing.StockQuantity += line.Quantity;
-                listing.UpdatedUtc = DateTime.UtcNow;
-                stockAfter = listing.StockQuantity;
+                await StockSync.RefreshListingsAsync(_db, variant.Product, DateTime.UtcNow, ct);
             }
-            else
-            {
-                variant.StockQuantity += line.Quantity;
-                stockAfter = variant.StockQuantity;
-            }
+            var stockAfter = variant.StockQuantity;
 
             _db.StockMovements.Add(new StockMovement
             {

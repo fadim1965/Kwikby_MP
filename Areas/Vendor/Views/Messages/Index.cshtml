@@ -13,13 +13,10 @@
                 Reply here and they are emailed your answer.
             </p>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            @if (unread > 0)
-            {
-                <span class="badge text-bg-danger">@unread waiting</span>
-            }
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Returns" asp-action="Index">Returns</a>
-        </div>
+        @if (unread > 0)
+        {
+            <span class="badge text-bg-danger">@unread waiting</span>
+        }
     </div>
 
     <div class="btn-group btn-group-sm mt-2" role="group" aria-label="Conversation filter">

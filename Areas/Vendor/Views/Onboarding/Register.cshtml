@@ -2,6 +2,7 @@
 @inject WebDS_Test.Services.IThemeCatalog Themes
 @using WebDS_Test.Domain
 @{
+    Layout = "/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Register a shop";
     var shopStatus = ViewData["ShopStatus"] as ShopStatus?;
     var statusReason = ViewData["StatusReason"] as string;

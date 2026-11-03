@@ -21,7 +21,7 @@
 }
 
 @{
-    ViewData["Title"] = "Vendor dashboard";
+    ViewData["Title"] = "Dashboard";
     var canViewFinancials = (bool?)ViewData["CanViewFinancials"] ?? true;
 }
 
@@ -29,24 +29,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-2">
         <div>
             <h1 class="h3 mb-1">@Model.ShopName</h1>
-            <p class="text-muted mb-0">Your vendor dashboard — sales, payouts and product performance.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Orders" asp-action="Index">Orders</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Returns" asp-action="Index">Returns</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="PostSale" asp-action="Index">After-sales</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="PostSale" asp-action="Fulfilments">Packages &amp; labels</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Messages" asp-action="Index">
-                Messages
-                @if ((int)(ViewData["UnreadMessages"] ?? 0) > 0)
-                {
-                    <span class="badge text-bg-danger">@ViewData["UnreadMessages"]</span>
-                }
-            </a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Products" asp-action="Index">Products</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Reviews" asp-action="Index">Reviews</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Payouts" asp-action="Index">Payouts</a>
-            <a class="btn btn-outline-primary btn-sm" asp-area="Vendor" asp-controller="Appearance" asp-action="Index">Appearance</a>
+            <p class="text-muted mb-0">Sales, payouts and product performance at a glance.</p>
         </div>
     </div>
 

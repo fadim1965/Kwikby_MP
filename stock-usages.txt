@@ -1,0 +1,124 @@
+﻿
+File                                                                                     LineNumber Line                                                                                                 
+----                                                                                     ---------- ----                                                                                                 
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\InventoryController.cs         41             "out" => query.Where(v => v.StockQuantity <= 0),                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\InventoryController.cs         42             "low" => query.Where(v => v.StockQuantity > 0 && v.StockQuantity <= v.LowStockThreshold),
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\InventoryController.cs         52                 .OrderBy(v => v.StockQuantity)                                                       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         118             "outofstock" => query.Where(p => !p.IsDeleted && p.Variants.All(v => !v.IsActive ||      
+                                                                                                    v.StockQuantity <= 0)),                                                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         132             TotalStock = p.Variants.Where(v => v.IsActive).Sum(v => (int?)v.StockQuantity) ?? 0,     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         152             Variants = { new VariantInput { Sku = string.Empty, Name = string.Empty, StockQuantity = 
+                                                                                                    0 } }                                                                                                
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         201                 StockQuantity = v.StockQuantity,                                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         367                     StockQuantity = input.StockQuantity,                                             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         384                 variant.StockQuantity = input.StockQuantity;                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         452                 var stock = product.Variants.Where(v => v.IsActive).Sum(v => v.StockQuantity);       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Controllers\ProductsController.cs         458                     StockQuantity = stock > 0 ? stock : product.Variants.Sum(v => v.StockQuantity),  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Admin\Models\AdminViewModels.cs                  33     public int StockQuantity { get; set; }                                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs         88             "outofstock" => query.Where(p => !p.IsDeleted && p.Variants.All(v => !v.IsActive ||      
+                                                                                                    v.StockQuantity <= 0)),                                                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        101                 TotalStock = p.Variants.Where(v => v.IsActive).Sum(v => (int?)v.StockQuantity) ?? 0, 
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        138             Variants = { new VariantInput { Sku = string.Empty, Name = string.Empty, StockQuantity = 
+                                                                                                    0 } }                                                                                                
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        193                 StockQuantity = v.StockQuantity,                                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        396                     StockQuantity = input.StockQuantity,                                             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        413                 variant.StockQuantity = input.StockQuantity;                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        483                 var stock = product.Variants.Where(v => v.IsActive).Sum(v => v.StockQuantity);       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Areas\Vendor\Controllers\ProductsController.cs        489                     StockQuantity = stock > 0 ? stock : product.Variants.Sum(v => v.StockQuantity),  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Controllers\ProductsController.cs                     105                 .OrderByDescending(v => v.StockQuantity > 0)                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DbSeeder.cs                                      330                 StockQuantity = stock,                                                               
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DbSeeder.cs                                      554             var stock = product.Variants.Where(v => v.IsActive).Sum(v => v.StockQuantity);           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DbSeeder.cs                                      560                 StockQuantity = stock > 0 ? stock : product.Variants.Sum(v => v.StockQuantity),      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DbSeeder.cs                                      589             .Where(v => v.IsActive && v.StockQuantity > 3 && v.Product!.IsFeatured)                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DemoShopSeeder.cs                                118                     StockQuantity = active.Sum(v => v.StockQuantity),                                
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DemoShopSeeder.cs                                205             StockQuantity = item.Stock,                                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Data\DemoShopSeeder.cs                                217                 StockQuantity = item.VariantStock,                                                   
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Cart.cs                                         77             return listing?.StockQuantity ?? variant.StockQuantity;                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Catalog.cs                                     143     public bool InStock => Listings.Any(l => l.IsActive && l.StockQuantity > 0)                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Catalog.cs                                     144                            || Variants.Any(v => v.IsActive && v.StockQuantity > 0);                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Catalog.cs                                     170     public int StockQuantity { get; set; }                                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Catalog.cs                                     187     public bool IsLowStock => StockQuantity <= LowStockThreshold;                                    
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Shop.cs                                        298     public int StockQuantity { get; set; }                                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Shop.cs                                        327     public bool IsLowStock => StockQuantity > 0 && StockQuantity <= LowStockThreshold;               
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Domain\Shop.cs                                        329     public bool IsOutOfStock => StockQuantity <= 0;                                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Models\StoreViewModels.cs                              71     public int TotalStock => Variants.Where(v => v.IsActive).Sum(v => v.StockQuantity);              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Models\StoreViewModels.cs                             181                     _ when i.ProductVariant.StockQuantity <= 0 =>                                    
+                                                                                                    $"'{i.ProductVariant.Product?.Name}' is out of stock.",                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Models\StoreViewModels.cs                             182                     _ when i.Quantity > i.ProductVariant.StockQuantity => $"Only                     
+                                                                                                    {i.ProductVariant.StockQuantity} × '{i.ProductVariant.Product?.Name}' available.",                   
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               166         if (listing.StockQuantity <= 0)                                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               196         if (desired > listing.StockQuantity)                                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               198             desired = listing.StockQuantity;                                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               199             if (existing is not null && existing.Quantity >= listing.StockQuantity)                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               202                     $"Only {listing.StockQuantity} of '{product.Name}' are in stock, and your cart   
+                                                                                                    already has them all.");                                                                             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               253         var stock = item.ProductVariant?.Product?.Listings.FirstOrDefault(l =>                       
+                                                                                                    l.IsActive)?.StockQuantity                                                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               254                     ?? item.ProductVariant?.StockQuantity                                            
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CartService.cs                               358             var stock = item.ProductVariant?.StockQuantity ?? 0;                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CatalogModels.cs                             127     public int StockQuantity { get; init; }                                                          
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CatalogService.cs                            124             q = q.Where(p => p.Listings.Any(l => l.IsActive && l.StockQuantity > 0));                
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CatalogService.cs                            492             ? listing.StockQuantity > 0                                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CatalogService.cs                            493             : activeVariants.Any(v => v.StockQuantity > 0);                                          
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CatalogService.cs                            495         var stock = listing?.StockQuantity ?? activeVariants.Sum(v => v.StockQuantity);              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\CatalogService.cs                            510             StockQuantity = stock,                                                                   
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                           53         var updated = variant.StockQuantity + delta;                                                 
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                           57                 $"Cannot reduce stock below zero (currently {variant.StockQuantity}).");             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                           60         variant.StockQuantity = updated;                                                             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                           96         var delta = newQuantity - variant.StockQuantity;                                             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                           99             return StockAdjustmentResult.Ok("Stock level unchanged.", variant.StockQuantity);        
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                          108             .Where(v => v.IsActive && v.StockQuantity <= threshold)                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\InventoryService.cs                          109             .OrderBy(v => v.StockQuantity)                                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ListingModerationService.cs                  268                 Stock = p.Variants.Where(v => v.IsActive).Sum(v => (int?)v.StockQuantity) ?? 0       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderModels.cs                               114     public int StockQuantity { get; init; }                                                          
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                               96             if (listing.StockQuantity < item.Quantity)                                               
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                               98                 return OrderResult.Fail(listing.StockQuantity <= 0                                   
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              100                     : $"Only {listing.StockQuantity} × '{product.Name}' remain. Please reduce the    
+                                                                                                    quantity.");                                                                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              254                         listing.StockQuantity -= item.Quantity;                                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              261                             StockAfter = listing.StockQuantity,                                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              482                             listing.StockQuantity += line.Quantity;                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              484                             stockAfter = listing.StockQuantity;                                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              488                             variant.StockQuantity += line.Quantity;                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              489                             stockAfter = variant.StockQuantity;                                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              747                 v.StockQuantity,                                                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              766             LowStockVariants = variants.Count(v => v.StockQuantity > 0 && v.StockQuantity <=         
+                                                                                                    v.LowStockThreshold),                                                                                
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              767             OutOfStockVariants = variants.Count(v => v.StockQuantity <= 0),                          
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              770             InventoryValue = variants.Sum(v => (decimal)v.Price * v.StockQuantity),                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              772                 .Where(v => v.StockQuantity <= v.LowStockThreshold)                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              773                 .OrderBy(v => v.StockQuantity)                                                       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                              779                     StockQuantity = v.StockQuantity,                                                 
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\OrderService.cs                             1032                 StockRemaining = v.StockQuantity                                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ReturnService.cs                             425                 listing.StockQuantity += line.Quantity;                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ReturnService.cs                             427                 stockAfter = listing.StockQuantity;                                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ReturnService.cs                             431                 variant.StockQuantity += line.Quantity;                                              
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ReturnService.cs                             432                 stockAfter = variant.StockQuantity;                                                  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ShopService.cs                               851             OutOfStockCount = listings.Count(l => l.IsActive && l.StockQuantity <= 0),               
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ShopService.cs                               852             LowStockCount = listings.Count(l => l.IsActive && l.StockQuantity > 0 && l.StockQuantity 
+                                                                                                    <= l.LowStockThreshold),                                                                             
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ShopService.cs                               862                 .Where(l => l.IsActive && l.StockQuantity <= l.LowStockThreshold)                    
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\ShopService.cs                               863                 .OrderBy(l => l.StockQuantity)                                                       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs               47         "Name,Slug,Category,Brand,ShortDescription,Description,SKU,VariantName,Price,CompareAtPrice,S
+                                                                                                    tockQuantity,IsPublished,IsFeatured,Images";                                                         
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs              170             var stockRaw = Field("StockQuantity");                                                   
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs              174                 errors.Add($"Line {line}: StockQuantity '{stockRaw}' is not a whole number.");       
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs              227                 StockQuantity = stock,                                                               
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs              293                     StockQuantity = row.StockQuantity,                                               
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs              302                 variant.StockQuantity = row.StockQuantity;                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Imports\ProductImportService.cs              347         public int StockQuantity { get; init; }                                                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1040             v.StockQuantity <= 0 ? "Out of stock"                                                    
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1041             : v.StockQuantity <= Math.Max(1, v.LowStockThreshold) ? "Low stock"                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1045             .OrderBy(v => v.StockQuantity)                                                           
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1053                 v.StockQuantity,                                                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1066                 new ReportFigure("Units in stock", variants.Sum(v => v.StockQuantity).ToString("N0", 
+                                                                                                    CultureInfo.InvariantCulture)),                                                                      
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1067                 new ReportFigure("Low stock", variants.Count(v => v.StockQuantity > 0 &&             
+                                                                                                    v.StockQuantity <= Math.Max(1, v.LowStockThreshold)).ToString("N0", CultureInfo.InvariantCulture)),  
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Reports\ReportingService.cs                 1068                 new ReportFigure("Out of stock", variants.Count(v => v.StockQuantity <=              
+                                                                                                    0).ToString("N0", CultureInfo.InvariantCulture))                                                     
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Shopify\ShopifyCatalogService.cs             446             StockQuantity = p.TotalInventory ?? Math.Max(0, variants.Sum(v => v.QuantityAvailable ?? 
+                                                                                                    0)),                                                                                                 
+C:\Users\metrif\source\repos\DS\Kwikby_MP\Services\Shopify\ShopifyCatalogService.cs             510                 StockQuantity = v.QuantityAvailable ?? (v.AvailableForSale == true ? 1 : 0),         
+
+
