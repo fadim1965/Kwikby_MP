@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net;
 
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>A rendered message: what a <see cref="EmailMessage"/> row is built from.</summary>
 public sealed record RenderedEmail(string Subject, string Html, string Text);

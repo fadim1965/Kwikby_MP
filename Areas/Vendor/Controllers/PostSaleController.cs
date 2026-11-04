@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>
 /// The shop's view of the marketplace's after-sales processes. LibanPost decides and issues the

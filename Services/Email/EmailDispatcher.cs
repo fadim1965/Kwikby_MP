@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>
 /// Drains the transactional email outbox in the background.

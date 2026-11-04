@@ -1,0 +1,11 @@
+bin/
+obj/
+Tests/
+docs/
+*.md
+.git/
+.vs/
+node_modules/
+App_Data/store.db
+App_Data/outbox/
+App_Data/uploads/

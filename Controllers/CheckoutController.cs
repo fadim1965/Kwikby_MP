@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Models;
-using WebDS_Test.Services;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Models;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>
 /// Checkout: review the cart, capture contact and shipping details, then place the order.

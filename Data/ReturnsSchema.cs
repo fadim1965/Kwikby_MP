@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees the returns tables exist — and that the columns they hang off existing records do.

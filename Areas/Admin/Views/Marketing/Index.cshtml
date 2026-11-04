@@ -1,7 +1,7 @@
-@using WebDS_Test.Areas.Admin.Models
-@using WebDS_Test.Domain
+@using kwikby_MP.Areas.Admin.Models
+@using kwikby_MP.Domain
 @model MarketingDashboardStats
-@inject Microsoft.Extensions.Options.IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@inject Microsoft.Extensions.Options.IOptions<kwikby_MP.Domain.StoreSettings> StoreOptions
 @{
     var currency = StoreOptions.Value.CurrencySymbol;
     var stats = Model;

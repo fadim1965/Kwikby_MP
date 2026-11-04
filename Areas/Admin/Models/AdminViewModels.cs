@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Areas.Admin.Models;
+namespace kwikby_MP.Areas.Admin.Models;
 
 /// <summary>One editable variant row inside the product editor.</summary>
 public sealed class VariantInput

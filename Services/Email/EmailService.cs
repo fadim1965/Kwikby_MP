@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>Everything needed to place one message in the outbox.</summary>
 public sealed record EmailDraft(

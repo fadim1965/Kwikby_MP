@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 
-namespace WebDS_Test.Services.Logging;
+namespace kwikby_MP.Services.Logging;
 
 /// <summary>
 /// A record on its way to the <c>Log</c> table: everything the writer needs, already formatted.

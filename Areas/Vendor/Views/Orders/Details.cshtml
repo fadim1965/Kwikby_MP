@@ -1,5 +1,5 @@
-@model WebDS_Test.Domain.Order
-@using WebDS_Test.Domain
+@model kwikby_MP.Domain.Order
+@using kwikby_MP.Domain
 @{
     ViewData["Title"] = Model.OrderNumber;
 }
@@ -76,7 +76,7 @@
             </div>
 
             @{
-                var sellerFulfilment = ViewData["SellerFulfilment"] as WebDS_Test.Domain.SellerFulfilment;
+                var sellerFulfilment = ViewData["SellerFulfilment"] as kwikby_MP.Domain.SellerFulfilment;
             }
             <div class="card mb-3">
                 <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
@@ -138,8 +138,8 @@
             </div>
 
             @{
-                var shipments = ViewData["Shipments"] as IReadOnlyList<WebDS_Test.Domain.OrderShipment>
-                                ?? Array.Empty<WebDS_Test.Domain.OrderShipment>();
+                var shipments = ViewData["Shipments"] as IReadOnlyList<kwikby_MP.Domain.OrderShipment>
+                                ?? Array.Empty<kwikby_MP.Domain.OrderShipment>();
                 var carrierName = ViewData["CarrierName"] as string ?? "the carrier";
                 var canDispatch = Model.Status is OrderStatus.Pending or OrderStatus.Paid;
             }
@@ -245,7 +245,7 @@
                 <div class="card-header bg-white fw-semibold">Returns</div>
                 <div class="card-body small">
                     @{
-                        var orderReturns = ViewData["Returns"] as IReadOnlyList<WebDS_Test.Domain.ReturnRequest>;
+                        var orderReturns = ViewData["Returns"] as IReadOnlyList<kwikby_MP.Domain.ReturnRequest>;
                     }
                     @if (orderReturns is { Count: > 0 })
                     {

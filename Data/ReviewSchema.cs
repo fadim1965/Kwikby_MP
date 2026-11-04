@@ -1,4 +1,4 @@
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees that the review tables exist in a store that was created before they were modelled.

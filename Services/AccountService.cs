@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Outcome of an account operation, with an optional error key for the view.</summary>
 public sealed record AccountResult(bool Success, string Message, ApplicationUser? User = null)

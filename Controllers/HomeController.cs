@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Models;
+using kwikby_MP.Models;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>Storefront home page and static/error pages.</summary>
 public class HomeController : StoreControllerBase

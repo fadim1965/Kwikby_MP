@@ -1,8 +1,8 @@
 @using Microsoft.Extensions.Options
-@using WebDS_Test.Services.Localization
-@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
-@inject IOptions<WebDS_Test.Domain.BrandingOptions> BrandOptions
-@inject WebDS_Test.Services.IThemeCatalog ThemeCatalog
+@using kwikby_MP.Services.Localization
+@inject IOptions<kwikby_MP.Domain.StoreSettings> StoreOptions
+@inject IOptions<kwikby_MP.Domain.BrandingOptions> BrandOptions
+@inject kwikby_MP.Services.IThemeCatalog ThemeCatalog
 @inject ITranslator T
 @{
     var store = StoreOptions.Value;
@@ -11,7 +11,7 @@
     var messageType = TempData["MessageType"] as string ?? "success";
 
     // The theme resolved by the tenant middleware for this request (shop storefronts), or the default.
-    var resolvedTheme = Context.Items["Tenant_Shop_Theme"] as WebDS_Test.Domain.ShopTheme ?? ThemeCatalog.Default;
+    var resolvedTheme = Context.Items["Tenant_Shop_Theme"] as kwikby_MP.Domain.ShopTheme ?? ThemeCatalog.Default;
 
     var dir = T.IsRightToLeft ? "rtl" : "ltr";
     var isAdmin = User.IsInRole("Admin");

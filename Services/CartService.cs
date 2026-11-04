@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Add-to-cart / update outcome surfaced to the user as a flash message.</summary>
 public sealed record CartResult(bool Success, string Message)

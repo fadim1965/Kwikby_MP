@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Export;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Export;
 
-namespace WebDS_Test.Services.Imports;
+namespace kwikby_MP.Services.Imports;
 
 /// <summary>The outcome of one import attempt, row by row.</summary>
 public sealed class ProductImportResult

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services.Localization;
+namespace kwikby_MP.Services.Localization;
 
 /// <summary>
 /// Application-wide access to <see cref="Translation"/> rows: the admin translation screen writes

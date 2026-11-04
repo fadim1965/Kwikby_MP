@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Payment configuration. <see cref="Provider"/> names the gateway the application registers at

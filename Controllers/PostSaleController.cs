@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>
 /// The shopper's side of the LibanPost post-sale processes: cancel, return, exchange and warranty.

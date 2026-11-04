@@ -1,6 +1,6 @@
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Outcome of a review operation, surfaced to the user as a flash message.</summary>
 public sealed record ReviewResult(bool Success, string Message)

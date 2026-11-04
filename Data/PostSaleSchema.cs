@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees the post-sale tables exist in a store created before these processes were modelled.

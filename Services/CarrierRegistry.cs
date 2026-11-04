@@ -1,6 +1,6 @@
-using WebDS_Test.Services.Shipping;
+using kwikby_MP.Services.Shipping;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Holds the configured carriers and decides which one is used by default.

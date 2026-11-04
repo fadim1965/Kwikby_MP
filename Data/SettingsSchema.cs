@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees the site-settings table exists on a store created before runtime settings were modelled.

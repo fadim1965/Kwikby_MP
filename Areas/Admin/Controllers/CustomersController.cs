@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Export;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Export;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>Customer accounts: search, order history and activation state.</summary>
 public class CustomersController : AdminControllerBase

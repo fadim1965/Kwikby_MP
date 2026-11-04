@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>What the store did with a webhook delivery. The HTTP status is derived from this.</summary>
 public sealed record WebhookResult(int StatusCode, string Outcome, string Message);

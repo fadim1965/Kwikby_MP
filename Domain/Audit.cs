@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// One recorded administrative action: who did what to which record, and when.

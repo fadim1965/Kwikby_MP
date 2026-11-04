@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees that the coupon tables — and the two columns they add to <c>Orders</c> — exist in a

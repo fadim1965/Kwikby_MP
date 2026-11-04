@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Result returned by a payment provider for a single charge attempt.</summary>
 public sealed record PaymentReceipt(

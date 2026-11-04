@@ -1,6 +1,6 @@
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Models;
+namespace kwikby_MP.Models;
 
 /// <summary>Backing model for the catalogue browse page: results plus the filter state to re-render.</summary>
 public sealed class CatalogViewModel

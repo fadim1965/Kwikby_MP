@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.Extensions.Options;
 
-namespace WebDS_Test.Services.Localization;
+namespace kwikby_MP.Services.Localization;
 
 /// <summary>
 /// One supported language: its code, its display name, whether it reads right to left, and its

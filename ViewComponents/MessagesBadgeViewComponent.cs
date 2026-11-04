@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Services;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.ViewComponents;
+namespace kwikby_MP.ViewComponents;
 
 /// <summary>
 /// The unread pill on the header's Messages link. A view component for the same reason the cart

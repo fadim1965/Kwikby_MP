@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>Where a transactional email has got to in the outbox.</summary>
 public enum EmailStatus

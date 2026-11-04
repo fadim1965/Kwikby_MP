@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Domain;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>Category tree administration.</summary>
 public class CategoriesController : AdminControllerBase

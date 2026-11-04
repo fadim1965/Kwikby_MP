@@ -1,8 +1,8 @@
-@model WebDS_Test.Domain.ReturnRequest
-@inject Microsoft.Extensions.Options.IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@model kwikby_MP.Domain.ReturnRequest
+@inject Microsoft.Extensions.Options.IOptions<kwikby_MP.Domain.StoreSettings> StoreOptions
 @{
     var order = Model.Order;
-    var history = ViewData["AuditHistory"] as IReadOnlyList<WebDS_Test.Domain.AuditLog>;
+    var history = ViewData["AuditHistory"] as IReadOnlyList<kwikby_MP.Domain.AuditLog>;
     var currency = StoreOptions.Value.CurrencySymbol;
 
     string Money(decimal value) => currency + value.ToString("N2");

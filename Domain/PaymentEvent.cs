@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// One webhook delivery received from a payment provider, recorded whether or not it was acted on.

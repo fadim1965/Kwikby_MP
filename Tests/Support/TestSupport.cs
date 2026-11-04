@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Small builders shared by the suites. Each context gets its own uniquely-named InMemory store, so

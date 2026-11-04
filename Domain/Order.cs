@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// A placed order. Every value a customer saw at checkout is snapshotted here so that later

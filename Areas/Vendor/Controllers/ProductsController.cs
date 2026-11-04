@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Images;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Images;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>Product, variant and image administration.</summary>
 [Area("Vendor")]

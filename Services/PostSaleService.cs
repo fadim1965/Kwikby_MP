@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Outcome of a post-sale operation.</summary>
 public sealed record PostSaleResult(bool Success, string Message, PostSaleRequest? Request = null)

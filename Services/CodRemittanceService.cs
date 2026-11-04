@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 public sealed class CarrierRemittanceCreateInput
 {

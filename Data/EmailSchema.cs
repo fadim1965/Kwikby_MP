@@ -1,4 +1,4 @@
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees that the transactional email outbox table exists in a store created before it was

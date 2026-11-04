@@ -1,4 +1,4 @@
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// Where a vendor's listing sits in the marketplace's review process.

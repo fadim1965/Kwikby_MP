@@ -1,6 +1,6 @@
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// What a shop role may do, expressed once so every vendor controller answers the question the same

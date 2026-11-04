@@ -1,4 +1,4 @@
-@model WebDS_Test.Controllers.ShopStorefrontViewModel
+@model kwikby_MP.Controllers.ShopStorefrontViewModel
 @{
     var deals = Model.Results.Items.Where(c => c.IsOnSale).Take(8).ToList();
 }

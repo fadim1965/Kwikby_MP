@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebDS_Test.ViewComponents;
+namespace kwikby_MP.ViewComponents;
 
 /// <summary>
 /// Renders the department list for the main navigation dropdown. A view component rather than

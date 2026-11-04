@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Variant stock is the source of truth; a listing's StockQuantity is the total of the product's active variants.

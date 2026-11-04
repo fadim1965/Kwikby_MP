@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>
 /// Translates the application's <see cref="ProductQuery"/> into Storefront API arguments.

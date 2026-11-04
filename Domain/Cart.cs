@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// A shopping cart. Owned either by a signed-in user (<see cref="UserId"/> set) or by an

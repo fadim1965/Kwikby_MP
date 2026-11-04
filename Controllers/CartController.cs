@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
-using WebDS_Test.Models;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Models;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>Cart management. Every mutation is a POST with an antiforgery token.</summary>
 public class CartController : StoreControllerBase

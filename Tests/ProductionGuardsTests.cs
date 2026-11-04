@@ -1,8 +1,8 @@
-using WebDS_Test.Data;
-using WebDS_Test.Services;
+using kwikby_MP.Data;
+using kwikby_MP.Services;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Pins the start-up guards that keep a production host off the demo defaults.

@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Throttling for the endpoints worth protecting — sign-in, checkout, review posting, messaging a

@@ -1,4 +1,4 @@
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// Storefront policy knobs bound from configuration (<c>Store</c> section in appsettings).

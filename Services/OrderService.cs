@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Owns order placement, history and fulfilment. Order creation is the one place where

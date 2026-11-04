@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Areas.Admin.Models;
+namespace kwikby_MP.Areas.Admin.Models;
 
 /// <summary>All figures a marketing department needs to steer the store: revenue trend,
 /// best sellers, category mix, order funnel, customer acquisition and coupon performance.</summary>

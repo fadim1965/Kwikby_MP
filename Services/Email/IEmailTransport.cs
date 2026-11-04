@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>
 /// One fully-rendered message, ready to hand to a transport. Deliberately a plain value: a

@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Localization;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Localization;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// The translation catalogue. The rules that matter are that an administrator's edit is what the

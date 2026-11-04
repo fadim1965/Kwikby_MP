@@ -1,7 +1,8 @@
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Areas.Admin.Models;
+
+namespace kwikby_MP.Areas.Admin.Models;
 
 /// <summary>The settlement dashboard: what each shop is owed, and what has already been paid.</summary>
 public sealed class AdminPayoutIndexViewModel

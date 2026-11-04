@@ -1,7 +1,7 @@
-using WebDS_Test.Services;
+using kwikby_MP.Services;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// The Bazaar skin is selectable, resolves by key, and is the only theme that uses the marketplace arrangement.

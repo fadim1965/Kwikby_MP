@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Kwikby_MP.Api.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Versions are pinned to the local NuGet cache; nuget.org is unreachable. -->
+    <!-- Note: Microsoft.AspNetCore.Mvc.Testing is deliberately absent. Only 8.0.0 is
+         cached, and its TestHost response writer does not implement
+         PipeWriter.UnflushedBytes, which .NET 9's System.Text.Json requires. The
+         real-process smoke test (docs/api-smoke.ps1) covers the HTTP pipeline. -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Kwikby_MP.Api\Kwikby_MP.Api.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- Same sandbox workaround as Tests/WebDS_Test.Tests.csproj: VSTest's
+       per-platform testhost.exe cannot open a handle to its parent here, so the
+       portable dotnet testhost.dll is used instead. -->
+  <PropertyGroup>
+    <RemoveTestHostAppHost Condition="'$(RemoveTestHostAppHost)' == ''">true</RemoveTestHostAppHost>
+  </PropertyGroup>
+  <Target Name="RemoveTestHostAppHost" AfterTargets="Build" Condition="'$(RemoveTestHostAppHost)' == 'true'">
+    <Delete Files="$(TargetDir)testhost.exe" />
+  </Target>
+
+</Project>

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Imports the shipped <c>App_Data/i18n/*.txt</c> catalogues into the <c>Translations</c> table on a

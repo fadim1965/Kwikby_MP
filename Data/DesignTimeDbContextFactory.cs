@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// Used only by the EF Core tools (migrations and script generation).
 /// It avoids running Program.cs, which seeds the database at start-up.

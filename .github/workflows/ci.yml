@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # The MVC test project is intentionally not in the solution (the root MVC
+      # project already compiles a hand-picked set of test sources). Restore and
+      # build both the solution and that project.
+      - name: Restore
+        run: |
+          dotnet restore Kwikby_MP.sln
+          dotnet restore Tests/WebDS_Test.Tests.csproj
+
+      - name: Build
+        run: |
+          dotnet build Kwikby_MP.sln --no-restore -c Release
+          dotnet build Tests/WebDS_Test.Tests.csproj --no-restore -c Release
+
+      - name: Test MVC
+        run: dotnet test Tests/WebDS_Test.Tests.csproj --no-build -c Release -p:RemoveTestHostAppHost=true
+
+      - name: Test API
+        run: dotnet test Tests/Kwikby_MP.Api.Tests/Kwikby_MP.Api.Tests.csproj --no-build -c Release -p:RemoveTestHostAppHost=true
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t kwikby:ci .

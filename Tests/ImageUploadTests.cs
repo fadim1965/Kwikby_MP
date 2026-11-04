@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using WebDS_Test.Services.Images;
+using kwikby_MP.Services.Images;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Covers the image-upload rules. Everything here is about trusting nothing the client sent: the

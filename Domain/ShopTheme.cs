@@ -1,4 +1,4 @@
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// A selectable storefront template theme for a vendor's shop.

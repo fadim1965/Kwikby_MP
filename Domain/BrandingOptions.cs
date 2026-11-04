@@ -1,4 +1,4 @@
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// Visual identity for the storefront, bound from the <c>Branding</c> configuration section.

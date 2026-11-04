@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Rules for settling a vendor's ledger. Kept in configuration because they are policy, not code:

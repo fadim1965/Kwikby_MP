@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>WebDS_Test.Tests</RootNamespace>
+    <RootNamespace>Kwikby_MP.Tests</RootNamespace>
     <!-- The web project is the application under test; it is an Exe, which is fine to reference. -->
   </PropertyGroup>
 
@@ -36,6 +36,20 @@
     <!-- The application is ASP.NET Core MVC; a few of its contracts (IFormFile and friends) come
          from the shared framework, so the test host needs it too. No NuGet package is involved. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!-- The API has its own test project under this directory. The SDK globs every
+       *.cs below the project directory, so without these removals this project would
+       compile the API tests (and their obj/ generated assembly attributes) too. -->
+  <ItemGroup>
+    <Compile Remove="Kwikby_MP.Api.Tests/**" />
+    <Compile Remove="Kwikby_MP.Api.Tests\**" />
+    <Content Remove="Kwikby_MP.Api.Tests/**" />
+    <Content Remove="Kwikby_MP.Api.Tests\**" />
+    <EmbeddedResource Remove="Kwikby_MP.Api.Tests/**" />
+    <EmbeddedResource Remove="Kwikby_MP.Api.Tests\**" />
+    <None Remove="Kwikby_MP.Api.Tests/**" />
+    <None Remove="Kwikby_MP.Api.Tests\**" />
   </ItemGroup>
 
   <!--

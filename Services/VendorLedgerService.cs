@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Writes the marketplace's vendor ledger: what it owes a shop, and why.

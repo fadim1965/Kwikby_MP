@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Export;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Export;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>
 /// Vendor settlements: what each shop is owed, and the record of paying it.

@@ -2,9 +2,9 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using WebDS_Test.Models;
+using kwikby_MP.Models;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>
 /// The payment surfaces that are not part of the shopping flow: the provider's webhook, the

@@ -1,9 +1,9 @@
 using System.Text;
 using ClosedXML.Excel;
-using WebDS_Test.Services.Export;
+using kwikby_MP.Services.Export;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Exports leave the application as bytes and are read by a spreadsheet the code never sees, so the

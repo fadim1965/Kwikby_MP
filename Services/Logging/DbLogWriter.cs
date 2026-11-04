@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Logging;
+namespace kwikby_MP.Services.Logging;
 
 /// <summary>
 /// Drains <see cref="DbLogQueue"/> into the store's <c>Log</c> table.
@@ -207,7 +207,7 @@ public sealed class DbLogWriter(
     private LogEntry ToEntity(DbLogRecord record) => new()
     {
         Application = Truncate(
-            string.IsNullOrWhiteSpace(options.Application) ? "WebDS_Test" : options.Application,
+            string.IsNullOrWhiteSpace(options.Application) ? "kwikby_MP" : options.Application,
             100),
         Logged = record.LoggedUtc,
         Level = Truncate(record.Level, 100),

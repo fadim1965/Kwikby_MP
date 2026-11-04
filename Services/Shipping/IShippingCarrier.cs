@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace WebDS_Test.Services.Shipping;
+namespace kwikby_MP.Services.Shipping;
 
 /// <summary>Where a consignment is going, and who receives it.</summary>
 public sealed class ShippingAddress

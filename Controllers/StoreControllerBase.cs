@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>
 /// Shared services for storefront pages: store settings for the chrome and the header

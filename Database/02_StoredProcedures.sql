@@ -1,12 +1,26 @@
 /* =====================================================================
-   Kwikby: stored procedures (SQL Server 2016 SP1 or later)
+   Kwikby: stored procedures (SQL Server 2014 compatible)
    File:       Database/02_StoredProcedures.sql
-   Depends on: the EF-generated schema (01_Schema.sql, see Database/README.md)
+   Depends on: the EF-generated schema (00_Schema.sql, see Database/README.md)
 
    Scope: read paths (search, product detail, dashboards) and atomic stock
    adjustments. Order placement, payment and ledger logic stays in the
    C# services, which are unit-tested; duplicating it in T-SQL would let the
    two drift apart.
+
+   SQL Server 2014 note
+   --------------------
+   The live server is 12.0 (compatibility 120), which does NOT support
+   CREATE OR ALTER (that arrived in 2016 SP1). Every procedure below is
+   therefore installed with the portable pattern:
+
+       IF OBJECT_ID(N'dbo.usp_X', N'P') IS NULL
+           EXEC(N'CREATE PROCEDURE dbo.usp_X AS BEGIN SET NOCOUNT ON; END');
+       <GO>
+       ALTER PROCEDURE dbo.usp_X ...
+       <GO>
+
+   This is idempotent on any version from 2005 onwards.
 
    Enum values used here (from Domain/Enums.cs):
      ListingStatus: Published = 0, Draft = 1, PendingReview = 2, Rejected = 3
@@ -22,7 +36,10 @@ SET NOCOUNT ON;
 GO
 
 /* ---------- Search and browse: one page of product cards -------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_SearchProducts
+IF OBJECT_ID(N'dbo.usp_SearchProducts', N'P') IS NULL
+    EXEC(N'CREATE PROCEDURE dbo.usp_SearchProducts AS BEGIN SET NOCOUNT ON; END');
+GO
+ALTER PROCEDURE dbo.usp_SearchProducts
     @Query       NVARCHAR(200) = NULL,
     @CategoryId  INT           = NULL,
     @ShopId      INT           = NULL,
@@ -105,7 +122,10 @@ END;
 GO
 
 /* ---------- Product page: product, variants, images, rating ----------- */
-CREATE OR ALTER PROCEDURE dbo.usp_GetProductDetail
+IF OBJECT_ID(N'dbo.usp_GetProductDetail', N'P') IS NULL
+    EXEC(N'CREATE PROCEDURE dbo.usp_GetProductDetail AS BEGIN SET NOCOUNT ON; END');
+GO
+ALTER PROCEDURE dbo.usp_GetProductDetail
     @ProductId INT
 AS
 BEGIN
@@ -141,7 +161,10 @@ END;
 GO
 
 /* ---------- Shop dashboard for the vendor workspace ------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_GetShopDashboard
+IF OBJECT_ID(N'dbo.usp_GetShopDashboard', N'P') IS NULL
+    EXEC(N'CREATE PROCEDURE dbo.usp_GetShopDashboard AS BEGIN SET NOCOUNT ON; END');
+GO
+ALTER PROCEDURE dbo.usp_GetShopDashboard
     @ShopId INT,
     @Days   INT = 30
 AS
@@ -179,7 +202,10 @@ END;
 GO
 
 /* ---------- Platform dashboard for administrators --------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_GetPlatformDashboard
+IF OBJECT_ID(N'dbo.usp_GetPlatformDashboard', N'P') IS NULL
+    EXEC(N'CREATE PROCEDURE dbo.usp_GetPlatformDashboard AS BEGIN SET NOCOUNT ON; END');
+GO
+ALTER PROCEDURE dbo.usp_GetPlatformDashboard
     @Days INT = 30
 AS
 BEGIN
@@ -199,7 +225,10 @@ END;
 GO
 
 /* ---------- Atomic stock adjustment with an audit trail --------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_AdjustStock
+IF OBJECT_ID(N'dbo.usp_AdjustStock', N'P') IS NULL
+    EXEC(N'CREATE PROCEDURE dbo.usp_AdjustStock AS BEGIN SET NOCOUNT ON; END');
+GO
+ALTER PROCEDURE dbo.usp_AdjustStock
     @ProductVariantId INT,
     @QuantityDelta    INT,
     @Reason           INT,                 -- StockMovementReason

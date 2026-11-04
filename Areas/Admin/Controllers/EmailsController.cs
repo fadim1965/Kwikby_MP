@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>
 /// The transactional email outbox: what the store has sent, what it is waiting to send, and what

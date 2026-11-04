@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Result of a manual inventory adjustment.</summary>
 public sealed record StockAdjustmentResult(bool Success, string Message, int NewStock = 0)

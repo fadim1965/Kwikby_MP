@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace WebDS_Test.Data.Migrations
+namespace kwikby_MP.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialSchema : Migration

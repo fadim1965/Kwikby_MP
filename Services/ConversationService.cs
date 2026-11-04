@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Outcome of a conversation operation.</summary>
 public sealed record ConversationResult(bool Success, string Message, Conversation? Conversation = null)

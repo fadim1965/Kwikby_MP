@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Services.Export;
-using WebDS_Test.Services.Imports;
+using kwikby_MP.Services.Export;
+using kwikby_MP.Services.Imports;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>Bulk catalogue import from CSV, and the template to build it from.</summary>
 public class ImportController : AdminControllerBase

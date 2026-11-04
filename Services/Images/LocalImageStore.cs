@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Images;
+namespace kwikby_MP.Services.Images;
 
 /// <summary>
 /// The default store: images become files in a folder the app serves as static content. Nothing the

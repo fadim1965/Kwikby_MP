@@ -7,12 +7,12 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Models;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Models;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>Registration, sign-in, profile, password and address book.</summary>
 public class AccountController : StoreControllerBase

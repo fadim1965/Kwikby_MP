@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// A discount code is the one place a shopper can name their own price, so the rules are pinned

@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Images;
+namespace kwikby_MP.Services.Images;
 
 /// <summary>
 /// Settings for uploaded product images. Bound from the <c>Images</c> configuration section, so the

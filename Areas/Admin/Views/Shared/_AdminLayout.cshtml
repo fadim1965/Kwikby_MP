@@ -1,7 +1,7 @@
 @using Microsoft.Extensions.Options
-@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
-@inject IOptions<WebDS_Test.Domain.BrandingOptions> BrandOptions
-@inject WebDS_Test.Services.IThemeCatalog ThemeCatalog
+@inject IOptions<kwikby_MP.Domain.StoreSettings> StoreOptions
+@inject IOptions<kwikby_MP.Domain.BrandingOptions> BrandOptions
+@inject kwikby_MP.Services.IThemeCatalog ThemeCatalog
 @{
     var store = StoreOptions.Value;
     var brand = BrandOptions.Value;

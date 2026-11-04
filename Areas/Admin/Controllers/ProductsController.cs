@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Export;
-using WebDS_Test.Services.Images;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Export;
+using kwikby_MP.Services.Images;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>Product, variant and image administration.</summary>
 public class ProductsController : AdminControllerBase

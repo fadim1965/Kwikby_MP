@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WebDS_Test.Services.Shipping;
+namespace kwikby_MP.Services.Shipping;
 
 /// <summary>
 /// LibanPost carrier client.

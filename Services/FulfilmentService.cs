@@ -1,7 +1,7 @@
-using WebDS_Test.Services.Email;
-using WebDS_Test.Services.Shipping;
+using kwikby_MP.Services.Email;
+using kwikby_MP.Services.Shipping;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Outcome of a fulfilment or tracking operation.</summary>
 public sealed record FulfilmentResult(bool Success, string Message, OrderShipment? Shipment = null)

@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Shipping;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Shipping;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>
 /// The shop's own order book. Every query is filtered by the resolved shop, so a vendor can read

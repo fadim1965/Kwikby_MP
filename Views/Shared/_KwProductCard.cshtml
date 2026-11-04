@@ -1,5 +1,5 @@
-@model WebDS_Test.Services.ProductCard
-@inject WebDS_Test.Services.ICurrencyFormatter Money
+@model kwikby_MP.Services.ProductCard
+@inject kwikby_MP.Services.ICurrencyFormatter Money
 @{
     var stars = string.Concat(Enumerable.Range(1, 5).Select(i => i <= Model.RoundedStars ? "★" : "☆"));
 }

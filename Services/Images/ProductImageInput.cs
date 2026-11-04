@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace WebDS_Test.Services.Images;
+namespace kwikby_MP.Services.Images;
 
 /// <summary>
 /// Turns the product editor's two image inputs — a textarea of URLs and zero or more uploaded files

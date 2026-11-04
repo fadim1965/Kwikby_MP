@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace WebDS_Test.Services.Shipping;
+namespace kwikby_MP.Services.Shipping;
 
 /// <summary>
 /// A working local carrier used when no LibanPost credentials are configured.

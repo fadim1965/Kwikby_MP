@@ -1,12 +1,12 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Reports;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Reports;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// The management reports: filters decide the window, the numbers must reconcile with the

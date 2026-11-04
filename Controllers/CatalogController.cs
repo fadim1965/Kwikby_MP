@@ -1,10 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
-using WebDS_Test.Models;
+using kwikby_MP.Domain;
+using kwikby_MP.Models;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>Product browsing: category, search, filter, sort and paging.</summary>
 public class CatalogController : StoreControllerBase

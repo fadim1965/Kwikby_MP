@@ -1,6 +1,6 @@
-using WebDS_Test.Services.Reports;
+using kwikby_MP.Services.Reports;
 
-namespace WebDS_Test.Areas.Admin.Models;
+namespace kwikby_MP.Areas.Admin.Models;
 
 /// <summary>The catalogue page: every report an administrator can run.</summary>
 public sealed class AdminReportsIndexViewModel

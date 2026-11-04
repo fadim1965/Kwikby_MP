@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Email;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// The return workflow end to end: a shopper asks, the shop decides and receives, the
@@ -354,16 +354,17 @@ public class ReturnWorkflowTests
         var received = await service.MarkReceivedAsync(created.Return.Id, "vendor@example.com");
         Assert.True(received.Success, received.Message);
 
-        var listing = await db.Set<ShopListing>().SingleAsync();
-        Assert.Equal(5, listing.StockQuantity); // 3 held + 2 returned
-
-        // The variant is untouched — the pool checkout committed is the listing's.
+        // Returned units go back on the variant (the real per-option count), and
+        // StockSync refreshes the listing total from the variant sum: 6 + 2 = 8.
         var variant = await db.Set<ProductVariant>().SingleAsync();
-        Assert.Equal(6, variant.StockQuantity);
+        Assert.Equal(8, variant.StockQuantity);
+
+        var listing = await db.Set<ShopListing>().SingleAsync();
+        Assert.Equal(8, listing.StockQuantity);
 
         var movement = await db.StockMovements.SingleAsync();
         Assert.Equal(StockMovementReason.Return, movement.Reason);
-        Assert.Equal(5, movement.StockAfter);
+        Assert.Equal(8, movement.StockAfter);
     }
 
     [Fact]

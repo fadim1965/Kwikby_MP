@@ -1,4 +1,4 @@
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// A named tax rate. A product points at one; a product with no class falls back to

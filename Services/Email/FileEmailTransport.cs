@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>
 /// The default transport: it writes each message to disk as a real RFC 822 <c>.eml</c> file (plus a

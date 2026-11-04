@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Models;
+namespace kwikby_MP.Models;
 
 public sealed class ApplyCouponModel
 {

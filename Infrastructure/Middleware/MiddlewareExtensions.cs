@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using WebDS_Test.Services;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Infrastructure.Middleware;
+namespace kwikby_MP.Infrastructure.Middleware;
 
 /// <summary>
 /// Pipeline interceptor that resolves the current tenant vendor storefront context early 

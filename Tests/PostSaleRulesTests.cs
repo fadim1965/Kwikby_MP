@@ -1,7 +1,7 @@
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 public class PostSaleRulesTests
 {

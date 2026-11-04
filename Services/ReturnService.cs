@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Outcome of a return operation.</summary>
 public sealed record ReturnResult(bool Success, string Message, ReturnRequest? Return = null)

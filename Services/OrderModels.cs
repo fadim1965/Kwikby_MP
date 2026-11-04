@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Areas.Admin.Models;
+using kwikby_MP.Areas.Admin.Models;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Customer-supplied checkout input.</summary>
 public sealed class CheckoutRequest

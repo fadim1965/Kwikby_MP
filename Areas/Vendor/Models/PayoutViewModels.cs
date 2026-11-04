@@ -1,7 +1,7 @@
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Areas.Vendor.Models;
+namespace kwikby_MP.Areas.Vendor.Models;
 
 /// <summary>A vendor's own money page: what they are owed, what has been paid, and why.</summary>
 public sealed class VendorPayoutViewModel

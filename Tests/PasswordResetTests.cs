@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Email;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// A reset link has to be unguessable, single-use and expiring. These tests drive the real service

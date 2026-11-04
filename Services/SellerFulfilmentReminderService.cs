@@ -3,11 +3,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Runs daily to remind sellers to confirm their packages before the 3 pm cut-off.

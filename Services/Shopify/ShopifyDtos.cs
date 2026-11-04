@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>
 /// Response shapes for the Storefront API queries in <see cref="ShopifyQueries"/>.

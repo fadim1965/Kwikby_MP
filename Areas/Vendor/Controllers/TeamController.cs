@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Areas.Vendor.Models;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Areas.Vendor.Models;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>
 /// Who can operate this shop. The owner adds colleagues by the email address they registered with,

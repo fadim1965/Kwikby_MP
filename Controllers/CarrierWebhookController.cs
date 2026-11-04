@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>
 /// Carrier webhooks for EPOD (Electronic Proof of Delivery), RTS manifests and quality reports.

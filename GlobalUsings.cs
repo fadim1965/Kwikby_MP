@@ -1,5 +1,5 @@
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Options;
-global using WebDS_Test.Data;
-global using WebDS_Test.Domain;
-global using WebDS_Test.Services;
+global using kwikby_MP.Data;
+global using kwikby_MP.Domain;
+global using kwikby_MP.Services;

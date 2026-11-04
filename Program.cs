@@ -15,16 +15,16 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Infrastructure.Middleware;
-using WebDS_Test.Services;
-using WebDS_Test.Services.Email;
-using WebDS_Test.Services.Images;
-using WebDS_Test.Services.Localization;
-using WebDS_Test.Services.Logging;
-using WebDS_Test.Services.Shipping;
-using WebDS_Test.Services.Shopify;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Infrastructure.Middleware;
+using kwikby_MP.Services;
+using kwikby_MP.Services.Email;
+using kwikby_MP.Services.Images;
+using kwikby_MP.Services.Localization;
+using kwikby_MP.Services.Logging;
+using kwikby_MP.Services.Shipping;
+using kwikby_MP.Services.Shopify;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,7 +149,7 @@ builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<IPostSaleService, PostSaleService>();
 builder.Services.AddScoped<IAuditTrail, AuditTrail>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
-builder.Services.AddScoped<WebDS_Test.Services.Imports.IProductImportService, WebDS_Test.Services.Imports.ProductImportService>();
+builder.Services.AddScoped<kwikby_MP.Services.Imports.IProductImportService, kwikby_MP.Services.Imports.ProductImportService>();
 builder.Services.AddSingleton<ITaxCalculator, TaxCalculator>();
 
 builder.Services.Configure<LanguageOptions>(builder.Configuration.GetSection(LanguageOptions.SectionName));
@@ -356,6 +356,15 @@ app.Use(async (ctx, next) =>
     h["X-Frame-Options"] = "SAMEORIGIN";
     h["Referrer-Policy"] = "strict-origin-when-cross-origin";
     h["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
+    // Content Security Policy (report-only first; tighten after auditing violations).
+    h["Content-Security-Policy-Report-Only"] =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self'; " +
+        "frame-ancestors 'self'";
     if (ctx.Request.IsHttps)
     {
         h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
@@ -381,28 +390,32 @@ app.MapControllerRoute(name: "areas", pattern: "{area:exists}/{controller=Dashbo
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Liveness: process is up (no dependency checks). Readiness: dependencies reachable.
+Func<HttpContext, Microsoft.Extensions.Diagnostics.HealthChecks.HealthReport, Task> healthJsonWriter = async (ctx, report) =>
+{
+    ctx.Response.ContentType = "application/json";
+    await ctx.Response.WriteAsync(
+        System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new { name = e.Key, status = e.Value.Status.ToString() })
+        }));
+};
+
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    Predicate = _ => false
+    Predicate = _ => false,
+    ResponseWriter = healthJsonWriter
 });
 app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    Predicate = check => check.Tags.Contains("ready")
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = healthJsonWriter
 });
 
 // Health endpoint for orchestrators/load balancers (back-compat alias for /health/ready).
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    ResponseWriter = async (ctx, report) =>
-    {
-        ctx.Response.ContentType = "application/json";
-        await ctx.Response.WriteAsync(
-            System.Text.Json.JsonSerializer.Serialize(new
-            {
-                status = report.Status.ToString(),
-                checks = report.Entries.Select(e => new { name = e.Key, status = e.Value.Status.ToString() })
-            }));
-    }
+    ResponseWriter = healthJsonWriter
 });
 
 // ---------------------------------------------------------------------------

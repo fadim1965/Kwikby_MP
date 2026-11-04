@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Application-wide access to <see cref="SiteSetting"/> rows: the admin settings screen writes

@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Images;
+namespace kwikby_MP.Services.Images;
 
 /// <summary>
 /// Recognises an image from its leading bytes. Extension checks are trivially spoofed, so the store

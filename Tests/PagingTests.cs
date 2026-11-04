@@ -1,7 +1,7 @@
-using WebDS_Test.Services;
+using kwikby_MP.Services;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Paging arithmetic guards against the two things that used to produce a 500 on the SQL Server

@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace WebDS_Test.Services.Reports;
+namespace kwikby_MP.Services.Reports;
 
 /// <summary>
 /// A minimal, dependency-free PDF writer for management reports.

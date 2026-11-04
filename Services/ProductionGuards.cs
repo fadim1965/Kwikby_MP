@@ -1,6 +1,6 @@
-using WebDS_Test.Data;
+using kwikby_MP.Data;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Start-up checks that stop a non-Development deployment from running on the demo defaults.

@@ -1,4 +1,4 @@
-@model WebDS_Test.Areas.Vendor.Models.TeamIndexViewModel
+@model kwikby_MP.Areas.Vendor.Models.TeamIndexViewModel
 @{
     ViewData["Title"] = "Team";
     var shop = Model.Shop;
@@ -55,7 +55,7 @@
                         <td class="fw-semibold">@member.DisplayName</td>
                         <td>@member.Email</td>
                         <td>
-                            <span class="badge @(member.Role == WebDS_Test.Domain.ShopRole.Owner ? "text-bg-dark" : member.Role == WebDS_Test.Domain.ShopRole.Manager ? "text-bg-primary" : "text-bg-secondary")">
+                            <span class="badge @(member.Role == kwikby_MP.Domain.ShopRole.Owner ? "text-bg-dark" : member.Role == kwikby_MP.Domain.ShopRole.Manager ? "text-bg-primary" : "text-bg-secondary")">
                                 @member.RoleLabel
                             </span>
                         </td>

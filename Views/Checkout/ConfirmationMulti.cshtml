@@ -1,6 +1,6 @@
-@model IReadOnlyList<WebDS_Test.Domain.Order>
+@model IReadOnlyList<kwikby_MP.Domain.Order>
 @{
-    var currency = "@(await (Context.RequestServices.GetService(typeof(WebDS_Test.Domain.StoreSettings))) as WebDS_Test.Domain.StoreSettings).CurrencySymbol";
+    var currency = "@(await (Context.RequestServices.GetService(typeof(kwikby_MP.Domain.StoreSettings))) as kwikby_MP.Domain.StoreSettings).CurrencySymbol";
     string Money(decimal value) => currency + value.ToString("N2");
 }
 <div class="container py-4">

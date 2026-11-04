@@ -1,6 +1,6 @@
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Areas.Vendor.Models;
+namespace kwikby_MP.Areas.Vendor.Models;
 
 /// <summary>One colleague with access to the shop.</summary>
 public sealed class TeamMemberRow

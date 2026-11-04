@@ -1,6 +1,6 @@
 using ImageMagick;
 
-namespace WebDS_Test.Services.Images;
+namespace kwikby_MP.Services.Images;
 
 /// <summary>
 /// Validates and normalises a product photo uploaded by a shop admin.

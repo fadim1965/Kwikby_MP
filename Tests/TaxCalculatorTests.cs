@@ -1,8 +1,8 @@
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Tax arithmetic. The rule that matters most here is backwards compatibility: a catalogue with no tax

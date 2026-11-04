@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Data;
+using kwikby_MP.Data;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees the category commission column exists in a store created before per-category

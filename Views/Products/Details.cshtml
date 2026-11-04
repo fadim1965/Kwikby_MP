@@ -1,6 +1,6 @@
 @model ProductDetailViewModel
 @using System.Globalization
-@inject WebDS_Test.Services.ICurrencyFormatter Money
+@inject kwikby_MP.Services.ICurrencyFormatter Money
 @functions {
     /* Two-letter monogram for the reviewer's avatar disc. */
     private static string Initials(string? name)
@@ -97,7 +97,7 @@
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
             @if (Model.ReviewSummary.HasRatings)
             {
-                <partial name="_Stars" model="@(new WebDS_Test.Services.StarRating(Model.ReviewSummary.Average, Model.ReviewSummary.Count))" />
+                <partial name="_Stars" model="@(new kwikby_MP.Services.StarRating(Model.ReviewSummary.Average, Model.ReviewSummary.Count))" />
                 <span class="fw-semibold">@Model.ReviewSummary.Average.ToString("0.0")</span>
                 <a class="small text-muted text-decoration-none" href="#reviews">
                     @Model.ReviewSummary.Count review@(Model.ReviewSummary.Count == 1 ? string.Empty : "s")
@@ -114,9 +114,9 @@
             <p class="text-muted">@product.ShortDescription</p>
         }
 
-        @if (Model.ShopRating.HasRatings && Model.ShopRating.Badge(new WebDS_Test.Domain.ReviewSettings()) != WebDS_Test.Services.SellerBadge.None)
+        @if (Model.ShopRating.HasRatings && Model.ShopRating.Badge(new kwikby_MP.Domain.ReviewSettings()) != kwikby_MP.Services.SellerBadge.None)
         {
-            var badge = Model.ShopRating.Badge(new WebDS_Test.Domain.ReviewSettings());
+            var badge = Model.ShopRating.Badge(new kwikby_MP.Domain.ReviewSettings());
             <div class="mb-2">
                 <span class="badge @badge.ToCssClass()">
                     <i class="bi bi-star-fill"></i> @badge.ToDisplay()
@@ -295,7 +295,7 @@
                                 <span class="review-average-max">out of 5</span>
                             </div>
                             <div>
-                                <partial name="_Stars" model="@(new WebDS_Test.Services.StarRating(Model.ReviewSummary.Average, Model.ReviewSummary.Count))" />
+                                <partial name="_Stars" model="@(new kwikby_MP.Services.StarRating(Model.ReviewSummary.Average, Model.ReviewSummary.Count))" />
                                 <div class="small text-muted">@Model.ReviewSummary.Count review@(Model.ReviewSummary.Count == 1 ? string.Empty : "s")</div>
                             </div>
                         </div>
@@ -443,7 +443,7 @@
                                     <div>
                                         <div class="fw-semibold">@review.ReviewerName</div>
                                         <div class="small text-muted d-flex flex-wrap align-items-center gap-2">
-                                            <partial name="_Stars" model="@(new WebDS_Test.Services.StarRating(review.Rating, 1))" />
+                                            <partial name="_Stars" model="@(new kwikby_MP.Services.StarRating(review.Rating, 1))" />
                                             <span>@review.CreatedUtc.ToString("d MMM yyyy")</span>
                                             @if (review.IsVerifiedPurchase)
                                             {

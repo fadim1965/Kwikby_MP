@@ -143,6 +143,26 @@ imports `Database:SqliteSource` into SQL Server at startup, before seeding:
 (the usual case) `Data Source=localhost` or `Data Source=.\SQLEXPRESS` also works; where it has
 been disabled, `Data Source=.` is the one that connects.
 
+### REST API (Phase 0/1)
+
+A separate `Kwikby_MP.Api` project exposes a JWT-secured REST API over the same SQL Server database.
+Its data access goes through stored procedures, not EF Core. The MVC site and the API can run side by
+side: the MVC site keeps port `5268`, the API uses `5269`.
+
+```powershell
+# Create/refresh the scratch database and seed the smoke-test data
+./Database/06_SeedApiTest.ps1
+
+# Run the API
+dotnet run --project Kwikby_MP.Api\Kwikby_MP.Api.csproj --urls http://localhost:5269
+```
+
+Phase 0/1 covers sign-in, product search/detail, categories, shops and the admin/vendor dashboards.
+The procedures are deployed to the scratch database only; **nothing has been applied to the live
+`MVStores` database**. Endpoint reference, configuration, testing and deployment are in
+[`docs/API_GUIDE.md`](docs/API_GUIDE.md). The design and Phase 2/3 scope are in
+[`docs/API_IMPLEMENTATION_PLAN.md`](docs/API_IMPLEMENTATION_PLAN.md).
+
 ---
 
 ## Logging
@@ -811,8 +831,9 @@ writes the same lines to the `Log` table (see [Logging](#logging)).
 ## Verifying the build
 
 ```
-dotnet build
-dotnet test Tests\WebDS_Test.Tests.csproj
+dotnet build Kwikby_MP.sln
+dotnet test Tests\WebDS_Test.Tests.csproj -p:RemoveTestHostAppHost=true
+dotnet test Tests\Kwikby_MP.Api.Tests\Kwikby_MP.Api.Tests.csproj -p:RemoveTestHostAppHost=true
 ```
 
 `Tests\` is an xUnit suite over EF Core's in-memory provider and Moq — no database and no server are
@@ -822,6 +843,11 @@ templates, the rate-limit configuration, the coupon rules (percentage/fixed math
 validity windows, use caps, per-shopper limits and redemption), the vendor ledger and payouts
 (commission maths, exactly-once crediting, reversal, settlement, minimum thresholds and statement
 scoping) and the export writers (CSV escaping, BOM, formula neutralisation, and the Excel round-trip).
+
+`Tests\Kwikby_MP.Api.Tests` is a separate suite for the REST API: query validation, SQL error
+translation, JWT claims/options, and SQL contract tests that verify every procedure and parameter
+the repositories call. The contract tests run only when `API_TEST_SQL` points at a scratch database;
+otherwise they pass without touching SQL. See [`docs/API_GUIDE.md`](docs/API_GUIDE.md) §11.
 
 > **Running the tests on this machine.** VSTest normally starts its test host through the
 > per-platform app host (`testhost.exe`). This sandbox denies that host the right to open a handle to

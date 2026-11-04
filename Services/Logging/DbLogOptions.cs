@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Logging;
+namespace kwikby_MP.Services.Logging;
 
 /// <summary>
 /// Settings for the database log sink, bound from the <c>Logging:Database</c> section.
@@ -27,7 +27,7 @@ public sealed class DbLogOptions
     public bool Enabled { get; set; } = true;
 
     /// <summary>Written to every row's <c>Application</c> column, so one table can serve several apps.</summary>
-    public string Application { get; set; } = "WebDS_Test";
+    public string Application { get; set; } = "kwikby_MP";
 
     /// <summary>
     /// How many records may wait in memory for the writer. When the queue is full the newest

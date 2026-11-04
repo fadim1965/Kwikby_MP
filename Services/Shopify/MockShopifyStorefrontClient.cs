@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>
 /// Serves Storefront API responses from an in-process fixture instead of the network.

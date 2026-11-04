@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.ViewComponents;
+namespace kwikby_MP.ViewComponents;
 
 /// <summary>
 /// Renders the header cart pill. Implemented as a view component so the badge count is never

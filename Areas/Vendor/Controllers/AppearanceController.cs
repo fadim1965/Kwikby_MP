@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>
 /// Lets a vendor choose the storefront template theme for their shop.

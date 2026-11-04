@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>kwikby_MP.Shared</RootNamespace>
+    <!-- Kept deliberately dependency-free: this library is shared by the MVC app and the API. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Single source of truth: the hasher file is compiled into this assembly by link,
+         not copied. The MVC project continues to compile the same file from Services/. -->
+    <Compile Include="..\Services\PasswordHasher.cs" Link="Security\PasswordHasher.cs" />
+  </ItemGroup>
+
+</Project>

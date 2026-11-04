@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Logging;
+namespace kwikby_MP.Services.Logging;
 
 /// <summary>
 /// Writes everything the application logs to the store's <c>Log</c> table.

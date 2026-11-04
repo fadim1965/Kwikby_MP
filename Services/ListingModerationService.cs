@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>The outcome of a moderation action.</summary>
 /// <param name="Success">Whether the action was carried out.</param>

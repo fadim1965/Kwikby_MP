@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Reports;
+namespace kwikby_MP.Services.Reports;
 
 /// <summary>
 /// A report filter as it arrives from a filter form: an inclusive date window and an optional

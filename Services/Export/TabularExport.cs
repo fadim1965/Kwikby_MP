@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Export;
+namespace kwikby_MP.Services.Export;
 
 /// <summary>The two shapes an admin report can be downloaded in.</summary>
 public enum ExportFormat

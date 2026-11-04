@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Areas.Vendor.Models;
-using WebDS_Test.Services;
+using kwikby_MP.Areas.Vendor.Models;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>
 /// A vendor's own settlements, read-only. Vendors see exactly what the marketplace owes them and the

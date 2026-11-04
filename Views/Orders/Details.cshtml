@@ -1,7 +1,7 @@
 @model Order
 @using Microsoft.Extensions.Options
-@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
-@inject WebDS_Test.Services.ICurrencyFormatter Money
+@inject IOptions<kwikby_MP.Domain.StoreSettings> StoreOptions
+@inject kwikby_MP.Services.ICurrencyFormatter Money
 @functions {
     private static string StepClass(bool done, bool current) =>
         current ? "current" : (done ? "done" : string.Empty);
@@ -283,7 +283,7 @@ else if (stopped)
             <div class="card-body">
                 <h2 class="h5 mb-2">Returns</h2>
                 @{
-                    var returns = ViewData["Returns"] as IReadOnlyList<WebDS_Test.Domain.ReturnRequest>;
+                    var returns = ViewData["Returns"] as IReadOnlyList<kwikby_MP.Domain.ReturnRequest>;
                 }
                 @if (returns is { Count: > 0 })
                 {
@@ -297,7 +297,7 @@ else if (stopped)
                                         @item.RequestedUtc.ToString("d MMM yyyy")
                                         · @item.Lines.Sum(l => l.Quantity) unit(s)
                                     </div>
-                                    @if (item.Status == WebDS_Test.Domain.ReturnStatus.Refunded)
+                                    @if (item.Status == kwikby_MP.Domain.ReturnStatus.Refunded)
                                     {
                                         <div class="small">Refunded @Money.Format(item.RefundAmount)</div>
                                     }
@@ -308,7 +308,7 @@ else if (stopped)
                             {
                                 <li class="small text-muted mb-1">Shop: @item.DecisionNote</li>
                             }
-                            @if (item.Status is WebDS_Test.Domain.ReturnStatus.Requested or WebDS_Test.Domain.ReturnStatus.Approved)
+                            @if (item.Status is kwikby_MP.Domain.ReturnStatus.Requested or kwikby_MP.Domain.ReturnStatus.Approved)
                             {
                                 <li class="mb-2">
                                     <form asp-action="CancelReturn" asp-route-id="@item.Id" method="post">
@@ -326,18 +326,18 @@ else if (stopped)
                 }
 
                 @{
-                    var canRequest = order.Status is WebDS_Test.Domain.OrderStatus.Paid
-                        or WebDS_Test.Domain.OrderStatus.Shipped
-                        or WebDS_Test.Domain.OrderStatus.Delivered
-                        && (returns is null || !returns.Any(r => r.Status is WebDS_Test.Domain.ReturnStatus.Requested
-                            or WebDS_Test.Domain.ReturnStatus.Approved or WebDS_Test.Domain.ReturnStatus.Received));
+                    var canRequest = order.Status is kwikby_MP.Domain.OrderStatus.Paid
+                        or kwikby_MP.Domain.OrderStatus.Shipped
+                        or kwikby_MP.Domain.OrderStatus.Delivered
+                        && (returns is null || !returns.Any(r => r.Status is kwikby_MP.Domain.ReturnStatus.Requested
+                            or kwikby_MP.Domain.ReturnStatus.Approved or kwikby_MP.Domain.ReturnStatus.Received));
                 }
                 @if (canRequest)
                 {
                     <a class="btn btn-outline-primary btn-sm" asp-action="RequestReturn" asp-route-id="@order.Id">Request a return</a>
                 }
-                else if (order.Status is WebDS_Test.Domain.OrderStatus.Paid
-                    or WebDS_Test.Domain.OrderStatus.Shipped or WebDS_Test.Domain.OrderStatus.Delivered)
+                else if (order.Status is kwikby_MP.Domain.OrderStatus.Paid
+                    or kwikby_MP.Domain.OrderStatus.Shipped or kwikby_MP.Domain.OrderStatus.Delivered)
                 {
                     <p class="small text-muted mb-0">
                         <a asp-action="RequestReturn" asp-route-id="@order.Id">View return form</a>
@@ -350,12 +350,12 @@ else if (stopped)
             <div class="card-body">
                 <h2 class="h5 mb-2">Cancellations, exchanges &amp; warranty</h2>
                 @{
-                    var postSales = ViewData["PostSales"] as IReadOnlyList<WebDS_Test.Domain.PostSaleRequest>;
-                    var canCancel = order.Status is WebDS_Test.Domain.OrderStatus.Pending
-                        or WebDS_Test.Domain.OrderStatus.Paid
+                    var postSales = ViewData["PostSales"] as IReadOnlyList<kwikby_MP.Domain.PostSaleRequest>;
+                    var canCancel = order.Status is kwikby_MP.Domain.OrderStatus.Pending
+                        or kwikby_MP.Domain.OrderStatus.Paid
                         && string.IsNullOrWhiteSpace(order.TrackingNumber);
-                    var canReturn = order.Status is WebDS_Test.Domain.OrderStatus.Paid
-                        or WebDS_Test.Domain.OrderStatus.Shipped or WebDS_Test.Domain.OrderStatus.Delivered;
+                    var canReturn = order.Status is kwikby_MP.Domain.OrderStatus.Paid
+                        or kwikby_MP.Domain.OrderStatus.Shipped or kwikby_MP.Domain.OrderStatus.Delivered;
                 }
                 @if (postSales is { Count: > 0 })
                 {
@@ -387,18 +387,18 @@ else if (stopped)
                         <a class="btn btn-outline-danger btn-sm"
                            asp-controller="PostSale" asp-action="Create"
                            asp-route-orderId="@order.Id"
-                           asp-route-type="@WebDS_Test.Domain.PostSaleType.Cancellation">Cancel order</a>
+                           asp-route-type="@kwikby_MP.Domain.PostSaleType.Cancellation">Cancel order</a>
                     }
                     @if (canReturn)
                     {
                         <a class="btn btn-outline-primary btn-sm"
                            asp-controller="PostSale" asp-action="Create"
                            asp-route-orderId="@order.Id"
-                           asp-route-type="@WebDS_Test.Domain.PostSaleType.Return">Return or exchange</a>
+                           asp-route-type="@kwikby_MP.Domain.PostSaleType.Return">Return or exchange</a>
                         <a class="btn btn-outline-secondary btn-sm"
                            asp-controller="PostSale" asp-action="Create"
                            asp-route-orderId="@order.Id"
-                           asp-route-type="@WebDS_Test.Domain.PostSaleType.Warranty">Warranty claim</a>
+                           asp-route-type="@kwikby_MP.Domain.PostSaleType.Warranty">Warranty claim</a>
                     }
                 </div>
             </div>

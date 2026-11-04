@@ -1,11 +1,11 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Reports;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Reports;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Assembles the marketplace's management reports from the same tables the shop runs on —

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Areas.Vendor.Models;
+namespace kwikby_MP.Areas.Vendor.Models;
 
     /// <summary>
     /// Coordinates transaction parameters between layout picking grids and backend server layers.

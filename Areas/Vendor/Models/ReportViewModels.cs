@@ -1,7 +1,7 @@
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Reports;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Reports;
 
-namespace WebDS_Test.Areas.Vendor.Models;
+namespace kwikby_MP.Areas.Vendor.Models;
 
 /// <summary>The catalogue page: every report a shop can run about itself.</summary>
 public sealed class VendorReportsIndexViewModel

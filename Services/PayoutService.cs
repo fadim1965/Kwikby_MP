@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Services.Email;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>A shop's unsettled balance: what the marketplace still owes it.</summary>
 public sealed record ShopOutstanding(

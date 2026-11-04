@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Domain;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Areas.Vendor.Controllers;
+namespace kwikby_MP.Areas.Vendor.Controllers;
 
 /// <summary>
 /// The seller's view of its own reviews: what shoppers are saying, and the public reply box. A

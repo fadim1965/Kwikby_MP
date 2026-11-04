@@ -1,6 +1,6 @@
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// Works out the tax on an order. Kept separate from <see cref="IOrderService"/> so the arithmetic can

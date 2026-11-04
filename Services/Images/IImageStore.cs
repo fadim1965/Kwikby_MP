@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Images;
+namespace kwikby_MP.Services.Images;
 
 /// <summary>
 /// Persists uploaded product images and hands back the URL to store on a

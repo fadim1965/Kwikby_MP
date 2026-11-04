@@ -1,4 +1,4 @@
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Guarantees that the <c>Log</c> table the database log sink writes to exists.

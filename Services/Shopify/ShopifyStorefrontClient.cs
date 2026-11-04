@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>Raised when the Storefront API returns GraphQL or transport errors.</summary>
 public sealed class ShopifyStorefrontException : Exception

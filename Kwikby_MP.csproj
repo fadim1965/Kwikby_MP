@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>WebDS_Test</RootNamespace>
+    <RootNamespace>kwikby_MP</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,10 +12,8 @@
          what exists in ~/.nuget/packages. See docs/ECOMMERCE_PLAN.md. -->
     <!-- SQLite is the development store and the source of the one-time import into SQL Server. -->
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="15.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.*">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <!-- EF Design package removed to keep the web assembly's EF Core version aligned with the
+         test project's in-memory provider (cached locally). Re-add for `dotnet ef migrations`. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
     <!-- SQL Server is the deployed provider (database "MVStores"). -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
@@ -40,15 +38,31 @@
     <Compile Remove="readme\**" />
     <Compile Remove="Tests/**" />
     <Compile Remove="Tests\**" />
+    <Compile Remove="Kwikby_MP.Api/**" />
+    <Compile Remove="Kwikby_MP.Api\**" />
+    <Compile Remove="Kwikby_MP.Shared/**" />
+    <Compile Remove="Kwikby_MP.Shared\**" />
     <Content Remove="readme\**" />
     <Content Remove="Tests/**" />
     <Content Remove="Tests\**" />
+    <Content Remove="Kwikby_MP.Api/**" />
+    <Content Remove="Kwikby_MP.Api\**" />
+    <Content Remove="Kwikby_MP.Shared/**" />
+    <Content Remove="Kwikby_MP.Shared\**" />
     <EmbeddedResource Remove="readme\**" />
     <EmbeddedResource Remove="Tests/**" />
     <EmbeddedResource Remove="Tests\**" />
+    <EmbeddedResource Remove="Kwikby_MP.Api/**" />
+    <EmbeddedResource Remove="Kwikby_MP.Api\**" />
+    <EmbeddedResource Remove="Kwikby_MP.Shared/**" />
+    <EmbeddedResource Remove="Kwikby_MP.Shared\**" />
     <None Remove="readme\**" />
     <None Remove="Tests/**" />
     <None Remove="Tests\**" />
+    <None Remove="Kwikby_MP.Api/**" />
+    <None Remove="Kwikby_MP.Api\**" />
+    <None Remove="Kwikby_MP.Shared/**" />
+    <None Remove="Kwikby_MP.Shared\**" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\uploads\kwikby_logo.png" />
@@ -65,14 +79,14 @@
     <Compile Include="Tests\Infrastructure\TenantThemeMiddlewareTests.cs" />
     <Compile Include="Tests\MarketingDashboardTests.cs" />
     <Compile Include="Tests\obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs" />
-    <Compile Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.AssemblyInfo.cs" />
-    <Compile Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.GlobalUsings.g.cs" />
+    <Compile Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.AssemblyInfo.cs" />
+    <Compile Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.GlobalUsings.g.cs" />
     <Compile Include="Tests\obj\Release\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs" />
-    <Compile Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.AssemblyInfo.cs" />
-    <Compile Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.GlobalUsings.g.cs" />
+    <Compile Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.AssemblyInfo.cs" />
+    <Compile Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.GlobalUsings.g.cs" />
     <Compile Include="Tests\obj\x64\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs" />
-    <Compile Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.AssemblyInfo.cs" />
-    <Compile Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.GlobalUsings.g.cs" />
+    <Compile Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.AssemblyInfo.cs" />
+    <Compile Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.GlobalUsings.g.cs" />
     <Compile Include="Tests\OrderStatusTransitionTests.cs" />
     <Compile Include="Tests\PagingTests.cs" />
     <Compile Include="Tests\PasswordResetTests.cs" />
@@ -95,12 +109,12 @@
     <Content Include="Tests\bin\Debug\net9.0\App_Data\i18n\fr.txt" />
     <Content Include="Tests\bin\Debug\net9.0\package-lock.json" />
     <Content Include="Tests\bin\Debug\net9.0\package.json" />
-    <Content Include="Tests\bin\Debug\net9.0\WebDS_Test.deps.json" />
-    <Content Include="Tests\bin\Debug\net9.0\WebDS_Test.runtimeconfig.json" />
-    <Content Include="Tests\bin\Debug\net9.0\WebDS_Test.staticwebassets.endpoints.json" />
-    <Content Include="Tests\bin\Debug\net9.0\WebDS_Test.staticwebassets.runtime.json" />
-    <Content Include="Tests\bin\Debug\net9.0\WebDS_Test.Tests.deps.json" />
-    <Content Include="Tests\bin\Debug\net9.0\WebDS_Test.Tests.runtimeconfig.json" />
+    <Content Include="Tests\bin\Debug\net9.0\Kwikby_MP.deps.json" />
+    <Content Include="Tests\bin\Debug\net9.0\Kwikby_MP.runtimeconfig.json" />
+    <Content Include="Tests\bin\Debug\net9.0\Kwikby_MP.staticwebassets.endpoints.json" />
+    <Content Include="Tests\bin\Debug\net9.0\Kwikby_MP.staticwebassets.runtime.json" />
+    <Content Include="Tests\bin\Debug\net9.0\Kwikby_MP.Tests.deps.json" />
+    <Content Include="Tests\bin\Debug\net9.0\Kwikby_MP.Tests.runtimeconfig.json" />
     <Content Include="Tests\bin\Release\net9.0\appsettings.Development.json" />
     <Content Include="Tests\bin\Release\net9.0\appsettings.json" />
     <Content Include="Tests\bin\Release\net9.0\appsettings.Local.json" />
@@ -109,29 +123,29 @@
     <Content Include="Tests\bin\Release\net9.0\App_Data\i18n\fr.txt" />
     <Content Include="Tests\bin\Release\net9.0\package-lock.json" />
     <Content Include="Tests\bin\Release\net9.0\package.json" />
-    <Content Include="Tests\bin\Release\net9.0\WebDS_Test.deps.json" />
-    <Content Include="Tests\bin\Release\net9.0\WebDS_Test.runtimeconfig.json" />
-    <Content Include="Tests\bin\Release\net9.0\WebDS_Test.staticwebassets.endpoints.json" />
-    <Content Include="Tests\bin\Release\net9.0\WebDS_Test.staticwebassets.runtime.json" />
-    <Content Include="Tests\bin\Release\net9.0\WebDS_Test.Tests.deps.json" />
-    <Content Include="Tests\bin\Release\net9.0\WebDS_Test.Tests.runtimeconfig.json" />
+    <Content Include="Tests\bin\Release\net9.0\Kwikby_MP.deps.json" />
+    <Content Include="Tests\bin\Release\net9.0\Kwikby_MP.runtimeconfig.json" />
+    <Content Include="Tests\bin\Release\net9.0\Kwikby_MP.staticwebassets.endpoints.json" />
+    <Content Include="Tests\bin\Release\net9.0\Kwikby_MP.staticwebassets.runtime.json" />
+    <Content Include="Tests\bin\Release\net9.0\Kwikby_MP.Tests.deps.json" />
+    <Content Include="Tests\bin\Release\net9.0\Kwikby_MP.Tests.runtimeconfig.json" />
     <Content Include="Tests\bin\x64\Debug\net9.0\appsettings.Development.json" />
     <Content Include="Tests\bin\x64\Debug\net9.0\appsettings.json" />
     <Content Include="Tests\bin\x64\Debug\net9.0\package-lock.json" />
     <Content Include="Tests\bin\x64\Debug\net9.0\package.json" />
-    <Content Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.deps.json" />
-    <Content Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.runtimeconfig.json" />
-    <Content Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.staticwebassets.endpoints.json" />
-    <Content Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.staticwebassets.runtime.json" />
-    <Content Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.Tests.deps.json" />
-    <Content Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.Tests.runtimeconfig.json" />
-    <Content Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.csproj.FileListAbsolute.txt" />
-    <Content Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.sourcelink.json" />
+    <Content Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.deps.json" />
+    <Content Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.runtimeconfig.json" />
+    <Content Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.staticwebassets.endpoints.json" />
+    <Content Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.staticwebassets.runtime.json" />
+    <Content Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.Tests.deps.json" />
+    <Content Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.Tests.runtimeconfig.json" />
+    <Content Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.csproj.FileListAbsolute.txt" />
+    <Content Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.sourcelink.json" />
     <Content Include="Tests\obj\project.assets.json" />
-    <Content Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.csproj.FileListAbsolute.txt" />
-    <Content Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.sourcelink.json" />
-    <Content Include="Tests\obj\WebDS_Test.Tests.csproj.nuget.dgspec.json" />
-    <Content Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.csproj.FileListAbsolute.txt" />
+    <Content Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.csproj.FileListAbsolute.txt" />
+    <Content Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.sourcelink.json" />
+    <Content Include="Tests\obj\Kwikby_MP.Tests.csproj.nuget.dgspec.json" />
+    <Content Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.csproj.FileListAbsolute.txt" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="wwwroot\images\kwikby_logo.png">
@@ -139,13 +153,14 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Tests\bin\Debug\net9.0\.msCoverageSourceRootsMapping_WebDS_Test.Tests" />
+    <None Include="Kwikby_MP.sln" />
+    <None Include="Tests\bin\Debug\net9.0\.msCoverageSourceRootsMapping_Kwikby_MP.Tests" />
     <None Include="Tests\bin\Debug\net9.0\Azure.Core.dll" />
     <None Include="Tests\bin\Debug\net9.0\Azure.Identity.dll" />
     <None Include="Tests\bin\Debug\net9.0\Castle.Core.dll" />
     <None Include="Tests\bin\Debug\net9.0\ClosedXML.dll" />
     <None Include="Tests\bin\Debug\net9.0\ClosedXML.Parser.dll" />
-    <None Include="Tests\bin\Debug\net9.0\CoverletSourceRootsMapping_WebDS_Test.Tests" />
+    <None Include="Tests\bin\Debug\net9.0\CoverletSourceRootsMapping_Kwikby_MP.Tests" />
     <None Include="Tests\bin\Debug\net9.0\cs\Microsoft.TestPlatform.CommunicationUtilities.resources.dll" />
     <None Include="Tests\bin\Debug\net9.0\cs\Microsoft.TestPlatform.CoreUtilities.resources.dll" />
     <None Include="Tests\bin\Debug\net9.0\cs\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
@@ -294,11 +309,11 @@
     <None Include="Tests\bin\Debug\net9.0\tr\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
     <None Include="Tests\bin\Debug\net9.0\tr\Microsoft.VisualStudio.TestPlatform.Common.resources.dll" />
     <None Include="Tests\bin\Debug\net9.0\tr\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll" />
-    <None Include="Tests\bin\Debug\net9.0\WebDS_Test.dll" />
-    <None Include="Tests\bin\Debug\net9.0\WebDS_Test.exe" />
-    <None Include="Tests\bin\Debug\net9.0\WebDS_Test.pdb" />
-    <None Include="Tests\bin\Debug\net9.0\WebDS_Test.Tests.dll" />
-    <None Include="Tests\bin\Debug\net9.0\WebDS_Test.Tests.pdb" />
+    <None Include="Tests\bin\Debug\net9.0\Kwikby_MP.dll" />
+    <None Include="Tests\bin\Debug\net9.0\Kwikby_MP.exe" />
+    <None Include="Tests\bin\Debug\net9.0\Kwikby_MP.pdb" />
+    <None Include="Tests\bin\Debug\net9.0\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\bin\Debug\net9.0\Kwikby_MP.Tests.pdb" />
     <None Include="Tests\bin\Debug\net9.0\xunit.abstractions.dll" />
     <None Include="Tests\bin\Debug\net9.0\xunit.assert.dll" />
     <None Include="Tests\bin\Debug\net9.0\xunit.core.dll" />
@@ -316,13 +331,13 @@
     <None Include="Tests\bin\Debug\net9.0\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
     <None Include="Tests\bin\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll" />
     <None Include="Tests\bin\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll" />
-    <None Include="Tests\bin\Release\net9.0\.msCoverageSourceRootsMapping_WebDS_Test.Tests" />
+    <None Include="Tests\bin\Release\net9.0\.msCoverageSourceRootsMapping_Kwikby_MP.Tests" />
     <None Include="Tests\bin\Release\net9.0\Azure.Core.dll" />
     <None Include="Tests\bin\Release\net9.0\Azure.Identity.dll" />
     <None Include="Tests\bin\Release\net9.0\Castle.Core.dll" />
     <None Include="Tests\bin\Release\net9.0\ClosedXML.dll" />
     <None Include="Tests\bin\Release\net9.0\ClosedXML.Parser.dll" />
-    <None Include="Tests\bin\Release\net9.0\CoverletSourceRootsMapping_WebDS_Test.Tests" />
+    <None Include="Tests\bin\Release\net9.0\CoverletSourceRootsMapping_Kwikby_MP.Tests" />
     <None Include="Tests\bin\Release\net9.0\cs\Microsoft.TestPlatform.CommunicationUtilities.resources.dll" />
     <None Include="Tests\bin\Release\net9.0\cs\Microsoft.TestPlatform.CoreUtilities.resources.dll" />
     <None Include="Tests\bin\Release\net9.0\cs\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
@@ -471,11 +486,11 @@
     <None Include="Tests\bin\Release\net9.0\tr\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
     <None Include="Tests\bin\Release\net9.0\tr\Microsoft.VisualStudio.TestPlatform.Common.resources.dll" />
     <None Include="Tests\bin\Release\net9.0\tr\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll" />
-    <None Include="Tests\bin\Release\net9.0\WebDS_Test.dll" />
-    <None Include="Tests\bin\Release\net9.0\WebDS_Test.exe" />
-    <None Include="Tests\bin\Release\net9.0\WebDS_Test.pdb" />
-    <None Include="Tests\bin\Release\net9.0\WebDS_Test.Tests.dll" />
-    <None Include="Tests\bin\Release\net9.0\WebDS_Test.Tests.pdb" />
+    <None Include="Tests\bin\Release\net9.0\Kwikby_MP.dll" />
+    <None Include="Tests\bin\Release\net9.0\Kwikby_MP.exe" />
+    <None Include="Tests\bin\Release\net9.0\Kwikby_MP.pdb" />
+    <None Include="Tests\bin\Release\net9.0\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\bin\Release\net9.0\Kwikby_MP.Tests.pdb" />
     <None Include="Tests\bin\Release\net9.0\xunit.abstractions.dll" />
     <None Include="Tests\bin\Release\net9.0\xunit.assert.dll" />
     <None Include="Tests\bin\Release\net9.0\xunit.core.dll" />
@@ -493,11 +508,11 @@
     <None Include="Tests\bin\Release\net9.0\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
     <None Include="Tests\bin\Release\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll" />
     <None Include="Tests\bin\Release\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll" />
-    <None Include="Tests\bin\x64\Debug\net9.0\.msCoverageSourceRootsMapping_WebDS_Test.Tests" />
+    <None Include="Tests\bin\x64\Debug\net9.0\.msCoverageSourceRootsMapping_Kwikby_MP.Tests" />
     <None Include="Tests\bin\x64\Debug\net9.0\Azure.Core.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\Azure.Identity.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\Castle.Core.dll" />
-    <None Include="Tests\bin\x64\Debug\net9.0\CoverletSourceRootsMapping_WebDS_Test.Tests" />
+    <None Include="Tests\bin\x64\Debug\net9.0\CoverletSourceRootsMapping_Kwikby_MP.Tests" />
     <None Include="Tests\bin\x64\Debug\net9.0\cs\Microsoft.TestPlatform.CommunicationUtilities.resources.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\cs\Microsoft.TestPlatform.CoreUtilities.resources.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\cs\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
@@ -641,11 +656,11 @@
     <None Include="Tests\bin\x64\Debug\net9.0\tr\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\tr\Microsoft.VisualStudio.TestPlatform.Common.resources.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\tr\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll" />
-    <None Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.dll" />
-    <None Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.exe" />
-    <None Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.pdb" />
-    <None Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.Tests.dll" />
-    <None Include="Tests\bin\x64\Debug\net9.0\WebDS_Test.Tests.pdb" />
+    <None Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.dll" />
+    <None Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.exe" />
+    <None Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.pdb" />
+    <None Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\bin\x64\Debug\net9.0\Kwikby_MP.Tests.pdb" />
     <None Include="Tests\bin\x64\Debug\net9.0\xunit.abstractions.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\xunit.assert.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\xunit.core.dll" />
@@ -663,43 +678,43 @@
     <None Include="Tests\bin\x64\Debug\net9.0\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll" />
     <None Include="Tests\bin\x64\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll" />
-    <None Include="Tests\obj\Debug\net9.0\refint\WebDS_Test.Tests.dll" />
-    <None Include="Tests\obj\Debug\net9.0\ref\WebDS_Test.Tests.dll" />
+    <None Include="Tests\obj\Debug\net9.0\refint\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\obj\Debug\net9.0\ref\Kwikby_MP.Tests.dll" />
     <None Include="Tests\obj\Debug\net9.0\WebDS_Te.6E790530.Up2Date" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.AssemblyInfoInputs.cache" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.assets.cache" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.csproj.AssemblyReference.cache" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.csproj.CoreCompileInputs.cache" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.dll" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.GeneratedMSBuildEditorConfig.editorconfig" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.genruntimeconfig.cache" />
-    <None Include="Tests\obj\Debug\net9.0\WebDS_Test.Tests.pdb" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.AssemblyInfoInputs.cache" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.assets.cache" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.csproj.AssemblyReference.cache" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.csproj.CoreCompileInputs.cache" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.GeneratedMSBuildEditorConfig.editorconfig" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.genruntimeconfig.cache" />
+    <None Include="Tests\obj\Debug\net9.0\Kwikby_MP.Tests.pdb" />
     <None Include="Tests\obj\project.nuget.cache" />
-    <None Include="Tests\obj\Release\net9.0\refint\WebDS_Test.Tests.dll" />
-    <None Include="Tests\obj\Release\net9.0\ref\WebDS_Test.Tests.dll" />
+    <None Include="Tests\obj\Release\net9.0\refint\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\obj\Release\net9.0\ref\Kwikby_MP.Tests.dll" />
     <None Include="Tests\obj\Release\net9.0\WebDS_Te.6E790530.Up2Date" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.AssemblyInfoInputs.cache" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.assets.cache" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.csproj.AssemblyReference.cache" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.csproj.CoreCompileInputs.cache" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.dll" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.GeneratedMSBuildEditorConfig.editorconfig" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.genruntimeconfig.cache" />
-    <None Include="Tests\obj\Release\net9.0\WebDS_Test.Tests.pdb" />
-    <None Include="Tests\obj\WebDS_Test.Tests.csproj.nuget.g.props" />
-    <None Include="Tests\obj\WebDS_Test.Tests.csproj.nuget.g.targets" />
-    <None Include="Tests\obj\x64\Debug\net9.0\refint\WebDS_Test.Tests.dll" />
-    <None Include="Tests\obj\x64\Debug\net9.0\ref\WebDS_Test.Tests.dll" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.AssemblyInfoInputs.cache" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.assets.cache" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.csproj.AssemblyReference.cache" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.csproj.CoreCompileInputs.cache" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.GeneratedMSBuildEditorConfig.editorconfig" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.genruntimeconfig.cache" />
+    <None Include="Tests\obj\Release\net9.0\Kwikby_MP.Tests.pdb" />
+    <None Include="Tests\obj\Kwikby_MP.Tests.csproj.nuget.g.props" />
+    <None Include="Tests\obj\Kwikby_MP.Tests.csproj.nuget.g.targets" />
+    <None Include="Tests\obj\x64\Debug\net9.0\refint\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\obj\x64\Debug\net9.0\ref\Kwikby_MP.Tests.dll" />
     <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Te.6E790530.Up2Date" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.AssemblyInfoInputs.cache" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.assets.cache" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.csproj.AssemblyReference.cache" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.csproj.CoreCompileInputs.cache" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.dll" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.GeneratedMSBuildEditorConfig.editorconfig" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.genruntimeconfig.cache" />
-    <None Include="Tests\obj\x64\Debug\net9.0\WebDS_Test.Tests.pdb" />
-    <None Include="Tests\WebDS_Test.Tests.csproj" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.AssemblyInfoInputs.cache" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.assets.cache" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.csproj.AssemblyReference.cache" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.csproj.CoreCompileInputs.cache" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.dll" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.GeneratedMSBuildEditorConfig.editorconfig" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.genruntimeconfig.cache" />
+    <None Include="Tests\obj\x64\Debug\net9.0\Kwikby_MP.Tests.pdb" />
+    <None Include="Tests\Kwikby_MP.Tests.csproj" />
   </ItemGroup>
 
   <!-- The Web SDK globs **/*.cs and **/* from the project directory, so the test project's sources

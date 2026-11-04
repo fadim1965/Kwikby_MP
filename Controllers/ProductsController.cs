@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using WebDS_Test.Data;
-using WebDS_Test.Domain;
-using WebDS_Test.Models;
-using WebDS_Test.Services;
+using kwikby_MP.Data;
+using kwikby_MP.Domain;
+using kwikby_MP.Models;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>Product detail page and the wishlist toggle.</summary>
 public class ProductsController : StoreControllerBase

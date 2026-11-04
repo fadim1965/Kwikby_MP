@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>
 /// Storefront API GraphQL documents. Kept as constants so they can be reviewed and diffed against

@@ -1,5 +1,5 @@
-@model IReadOnlyList<WebDS_Test.Domain.CarrierRemittance>
-@inject WebDS_Test.Services.ICurrencyFormatter Money
+@model IReadOnlyList<kwikby_MP.Domain.CarrierRemittance>
+@inject kwikby_MP.Services.ICurrencyFormatter Money
 @{
     ViewData["Title"] = "COD remittances";
     var openCount = (int?)ViewData["OpenCount"] ?? 0;
@@ -23,7 +23,7 @@
     <div class="d-flex gap-2 mt-3">
         <a class="btn btn-sm @(ViewData["Status"] is null ? "btn-primary" : "btn-outline-secondary")"
            asp-action="Index">All</a>
-        @foreach (var s in new[] { WebDS_Test.Domain.RemittanceStatus.Received, WebDS_Test.Domain.RemittanceStatus.Disputed, WebDS_Test.Domain.RemittanceStatus.Reconciled, WebDS_Test.Domain.RemittanceStatus.Closed })
+        @foreach (var s in new[] { kwikby_MP.Domain.RemittanceStatus.Received, kwikby_MP.Domain.RemittanceStatus.Disputed, kwikby_MP.Domain.RemittanceStatus.Reconciled, kwikby_MP.Domain.RemittanceStatus.Closed })
         {
             <a class="btn btn-sm @(ViewData["Status"]?.ToString() == s.ToString() ? "btn-primary" : "btn-outline-secondary")"
                asp-action="Index" asp-route-status="@s">@s.ToDisplay()</a>

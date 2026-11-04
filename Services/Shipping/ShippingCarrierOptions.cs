@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Shipping;
+namespace kwikby_MP.Services.Shipping;
 
 /// <summary>
 /// Carrier configuration, bound from the <c>Shipping</c> section of appsettings.

@@ -1,5 +1,5 @@
 @using Microsoft.Extensions.Options
-@model WebDS_Test.Domain.Order
+@model kwikby_MP.Domain.Order
 @inject IOptions<StoreSettings> StoreOptions
 @{
     var currency = StoreOptions.Value.CurrencySymbol;
@@ -271,7 +271,7 @@
 
 @* ---- Payments ---- *@
 @{
-    var orderReturns = ViewData["Returns"] as IReadOnlyList<WebDS_Test.Domain.ReturnRequest>;
+    var orderReturns = ViewData["Returns"] as IReadOnlyList<kwikby_MP.Domain.ReturnRequest>;
 }
 @if (orderReturns is { Count: > 0 })
 {

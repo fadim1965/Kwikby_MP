@@ -23,11 +23,15 @@ Four audiences, four documents. Start with the one that matches why you are here
 | [`FEATURES.md`](FEATURES.md) | Everyone | The complete feature inventory, as a checklist of what exists. |
 | [`PAGES_AND_FORMS.md`](PAGES_AND_FORMS.md) | Everyone | A page-by-page and form-by-form reference: every screen, route, model and field. |
 | [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) | Developers, operators | The SQL Server schema: every table, column, type, nullability, primary and foreign keys, and the relationships between them. |
+| [`API_GUIDE.md`](API_GUIDE.md) | Developers, operators | The Phase 0/1 REST API: endpoints, JWT authentication, stored procedures, configuration, testing, deployment and troubleshooting. |
+| [`API_IMPLEMENTATION_PLAN.md`](API_IMPLEMENTATION_PLAN.md) | Developers, operators | The API design, endpoint/procedure catalogue, decisions and delivery status. |
+| [`LibanPost_eShop_API_Guide.pdf`](LibanPost_eShop_API_Guide.pdf) | Developers, operators | The API guide as a downloadable PDF. |
 | [`LibanPost_eShop_Database_Schema.pdf`](LibanPost_eShop_Database_Schema.pdf) | Developers, operators | The same schema reference as a downloadable PDF. |
 | [`LibanPost_eShop_Pages_and_Forms.pdf`](LibanPost_eShop_Pages_and_Forms.pdf) | Everyone | The same page/form reference as a downloadable PDF. |
 | [`FORMS_ILLUSTRATED.md`](FORMS_ILLUSTRATED.md) | Everyone | A screenshot walkthrough — every form-bearing page shown, with its fields explained. |
 | [`LibanPost_eShop_Forms_Illustrated.pdf`](LibanPost_eShop_Forms_Illustrated.pdf) | Everyone | The illustrated walkthrough as a downloadable PDF (all 47 screenshots embedded; the Part 6 return, refund and audit pages are described in text). |
 | [`ECOMMERCE_PLAN.md`](ECOMMERCE_PLAN.md) | Everyone | The original plan and the reasoning behind the design decisions. |
+| [`All_PDFs.zip`](All_PDFs.zip) | Everyone | Every PDF in this folder in one download. |
 
 ---
 

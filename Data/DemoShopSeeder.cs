@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebDS_Test.Domain;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Data;
+namespace kwikby_MP.Data;
 
 /// <summary>
 /// Optional sample marketplace for testing: five approved shops with 25 products each, owned by five
@@ -101,8 +101,23 @@ public static class DemoShopSeeder
             {
                 if (!categories.TryGetValue(item.Category, out var categoryId))
                 {
-                    logger.LogWarning("Demo product '{Product}' skipped: category '{Category}' not found.", item.Name, item.Category);
-                    continue;
+                    // The demo data references categories that the base seeder normally provides;
+                    // in a bare store (e.g. tests) create the missing global category on demand so
+                    // no product is silently skipped.
+                    var newCategory = new Category
+                    {
+                        Name = item.Category.Replace("-", " ").Trim(),
+                        Slug = item.Category,
+                        Description = $"Auto-created for demo seeding ({item.Category}).",
+                        DisplayOrder = 100,
+                        IsGlobal = true,
+                        IsActive = true
+                    };
+                    db.Categories.Add(newCategory);
+                    await db.SaveChangesAsync(ct);
+                    categoryId = newCategory.Id;
+                    categories[item.Category] = categoryId;
+                    logger.LogInformation("Created missing category '{Category}' for demo product '{Product}'.", item.Category, item.Name);
                 }
 
                 var product = BuildProduct(data, item, shop.Id, categoryId, now);

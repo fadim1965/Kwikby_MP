@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 // System.Net.Mail is obsolete as of .NET 6 (SYSLIB0014) because SmtpClient does not support modern
 // authentication. It is used here deliberately and only here: MailKit, the recommended

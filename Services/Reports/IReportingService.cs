@@ -1,6 +1,6 @@
-using WebDS_Test.Services.Reports;
+using kwikby_MP.Services.Reports;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>Builds the management reports offered to the marketplace owner and to shops.</summary>
 public interface IReportingService

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDS_Test.Domain;
+namespace kwikby_MP.Domain;
 
 /// <summary>
 /// One line of the application's diagnostic trail: what happened, at which level, logged by which
@@ -10,12 +10,12 @@ namespace WebDS_Test.Domain;
 /// <para>
 /// This sits deliberately outside the store's domain model: nothing references it and it references
 /// nothing, so it never takes part in an order or a catalogue query. Rows are written by
-/// <c>WebDS_Test.Services.Logging.DbLoggerProvider</c> and read by whoever is diagnosing a
+/// <c>kwikby_MP.Services.Logging.DbLoggerProvider</c> and read by whoever is diagnosing a
 /// deployment.
 /// </para>
 /// <para>
 /// The column widths reproduce the <c>Log</c> table the SQL Server database already carries, so the
-/// same entity maps onto SQLite unchanged — see <see cref="WebDS_Test.Data.LogTable"/>.
+/// same entity maps onto SQLite unchanged — see <see cref="kwikby_MP.Data.LogTable"/>.
 /// </para>
 /// </remarks>
 public class LogEntry

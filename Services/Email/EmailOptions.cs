@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>
 /// Settings for transactional email. Bound from the <c>Email</c> configuration section so a

@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>
 /// Configuration for reading the catalogue from Shopify's Storefront API.

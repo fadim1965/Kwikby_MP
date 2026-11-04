@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 
-namespace WebDS_Test.Services.Email;
+namespace kwikby_MP.Services.Email;
 
 /// <summary>
 /// Mints and redeems password-reset tokens.
@@ -49,7 +49,7 @@ public interface IPasswordResetService
 public sealed class PasswordResetService : IPasswordResetService
 {
     /// <summary>Versioned so the token format can change without invalidating older keys.</summary>
-    private const string ProtectorPurpose = "WebDS_Test.PasswordReset.v1";
+    private const string ProtectorPurpose = "kwikby_MP.PasswordReset.v1";
 
     private const int MinimumPasswordLength = 8;
 

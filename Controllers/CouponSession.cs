@@ -1,8 +1,8 @@
-using WebDS_Test.Domain;
-using WebDS_Test.Models;
-using WebDS_Test.Services;
+using kwikby_MP.Domain;
+using kwikby_MP.Models;
+using kwikby_MP.Services;
 
-namespace WebDS_Test.Controllers;
+namespace kwikby_MP.Controllers;
 
 /// <summary>
 /// The coupon a shopper has applied lives in the session as a bare code — never as a computed

@@ -1,6 +1,6 @@
-@model WebDS_Test.Controllers.ShopStorefrontViewModel
+@model kwikby_MP.Controllers.ShopStorefrontViewModel
 @using Microsoft.Extensions.Options
-@inject IOptions<WebDS_Test.Domain.StoreSettings> StoreOptions
+@inject IOptions<kwikby_MP.Domain.StoreSettings> StoreOptions
 @{
     var symbol = StoreOptions.Value.CurrencySymbol;
     var shop = Model.Shop;

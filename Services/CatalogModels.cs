@@ -1,4 +1,4 @@
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>A page of results plus the metadata a pager needs to render.</summary>
 public sealed class PagedResult<T>

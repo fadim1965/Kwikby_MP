@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace WebDS_Test.Services.Shopify;
+namespace kwikby_MP.Services.Shopify;
 
 /// <summary>
 /// Reads the storefront catalogue from Shopify's Storefront API instead of the local database.

@@ -1,4 +1,4 @@
-namespace WebDS_Test.Models;
+namespace kwikby_MP.Models;
 
 /// <summary>Backing model for Account/Login.</summary>
 public sealed class LoginViewModel

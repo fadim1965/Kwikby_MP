@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebDS_Test.Areas.Admin.Models;
-using WebDS_Test.Services.Export;
+using kwikby_MP.Areas.Admin.Models;
+using kwikby_MP.Services.Export;
 
-namespace WebDS_Test.Areas.Admin.Controllers;
+namespace kwikby_MP.Areas.Admin.Controllers;
 
 /// <summary>
 /// Marketing dashboard: revenue trend, best sellers, category mix, order funnel, customer

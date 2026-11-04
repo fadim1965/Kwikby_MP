@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using WebDS_Test.Domain;
+using kwikby_MP.Domain;
 
-namespace WebDS_Test.Services;
+namespace kwikby_MP.Services;
 
 /// <summary>
 /// The catalogue of storefront themes a vendor can choose from.

@@ -1,8 +1,8 @@
-using WebDS_Test.Domain;
-using WebDS_Test.Services.Email;
+using kwikby_MP.Domain;
+using kwikby_MP.Services.Email;
 using Xunit;
 
-namespace WebDS_Test.Tests;
+namespace kwikby_MP.Tests;
 
 /// <summary>
 /// Templates are pure functions, which makes them the cheapest place to pin down behaviour: no
